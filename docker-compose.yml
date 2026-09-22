@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: gamehub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gamehub
+      POSTGRES_USER: gamehub
+      POSTGRES_PASSWORD: gamehub_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - gamehub_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  gamehub_postgres_data:

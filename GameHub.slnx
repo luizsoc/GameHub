@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/GameHub.Api/GameHub.Api.csproj" />
+    <Project Path="backend/GameHub.Application/GameHub.Application.csproj" />
+    <Project Path="backend/GameHub.Domain/GameHub.Domain.csproj" />
+    <Project Path="backend/GameHub.Infrastructure/GameHub.Infrastructure.csproj" />
+    <Project Path="backend/GameHub.Tests/GameHub.Tests.csproj" />
+  </Folder>
+</Solution>
