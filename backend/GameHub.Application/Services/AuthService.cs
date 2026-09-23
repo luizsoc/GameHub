@@ -8,17 +8,20 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IJwtService _jwtService;
     private readonly IPasswordHasher _passwordHasher;
 
     public AuthService(
-        IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
-        IPasswordHasher passwordHasher)
-    {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-        _passwordHasher = passwordHasher;
-    }
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
+    IPasswordHasher passwordHasher,
+    IJwtService jwtService)
+{
+    _userRepository = userRepository;
+    _unitOfWork = unitOfWork;
+    _passwordHasher = passwordHasher;
+    _jwtService = jwtService;
+}
 
     public async Task<UserResponse> RegisterAsync(
         RegisterUserRequest request)
@@ -74,8 +77,38 @@ public class AuthService : IAuthService
         };
     }
 
-    public Task<string> LoginAsync(LoginRequest request)
+    public async Task<string> LoginAsync(LoginRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Email))
     {
-        throw new NotImplementedException();
+        throw new ArgumentException("Email is required.");
     }
+
+    if (string.IsNullOrWhiteSpace(request.Password))
+    {
+        throw new ArgumentException("Password is required.");
+    }
+
+    var email = request.Email.Trim().ToLowerInvariant();
+
+    var user = await _userRepository.GetByEmailAsync(email);
+
+    if (user is null)
+    {
+        throw new UnauthorizedAccessException(
+            "Invalid email or password.");
+    }
+
+    var passwordIsValid = _passwordHasher.Verify(
+        request.Password,
+        user.PasswordHash);
+
+    if (!passwordIsValid)
+    {
+        throw new UnauthorizedAccessException(
+            "Invalid email or password.");
+    }
+
+    return _jwtService.GenerateToken(user);
+}
 }

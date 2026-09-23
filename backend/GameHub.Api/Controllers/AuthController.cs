@@ -34,4 +34,24 @@ public class AuthController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<string>> Login(
+        LoginRequest request)
+    {
+        try
+        {
+            var token = await _authService.LoginAsync(request);
+
+            return Ok(new { token });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
 }

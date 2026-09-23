@@ -1,11 +1,13 @@
 using GameHub.Application.DTOs.Channels;
 using GameHub.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;  
 
 namespace GameHub.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ChannelsController : ControllerBase
 {
     private readonly IChannelService _channelService;
