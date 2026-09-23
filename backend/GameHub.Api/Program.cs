@@ -3,6 +3,9 @@ using GameHub.Application.Services;
 using GameHub.Infrastructure.Data;
 using GameHub.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using GameHub.Domain.Entities;
+using GameHub.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +23,14 @@ builder.Services.AddScoped<IChannelService, ChannelService>();
 
 builder.Services.AddScoped<IUnitOfWork>(sp =>
     sp.GetRequiredService<GameHubDbContext>());
+
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 var app = builder.Build();
 
