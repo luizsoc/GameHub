@@ -1,31 +1,36 @@
-using GameHub.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using GameHub.Application.Interfaces;
-using GameHub.Infrastructure.Repositories;
 using GameHub.Application.Services;
+using GameHub.Infrastructure.Data;
+using GameHub.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddControllers();
 
 builder.Services.AddDbContext<GameHubDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
+
 builder.Services.AddScoped<IChannelService, ChannelService>();
+
+builder.Services.AddScoped<IUnitOfWork>(sp =>
+    sp.GetRequiredService<GameHubDbContext>());
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+
+app.MapControllers();
 
 var summaries = new[]
 {
