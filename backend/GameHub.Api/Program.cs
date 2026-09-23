@@ -1,5 +1,8 @@
 using GameHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using GameHub.Application.Interfaces;
+using GameHub.Infrastructure.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,6 +12,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<GameHubDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
 
 var app = builder.Build();
 
