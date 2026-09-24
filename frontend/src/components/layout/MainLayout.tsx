@@ -4,6 +4,7 @@ import { useChannels } from '../../hooks/useChannels'
 import type { ChannelResponse } from '../../types/channel'
 import ChannelSidebar from '../channels/ChannelSidebar'
 import CreateChannelModal from '../channels/CreateChannelModal'
+import MessagePanel from '../messages/MessagePanel'
 
 function MainLayout() {
   const { user, logout } = useAuth()
@@ -27,23 +28,27 @@ function MainLayout() {
   function renderChannelArea() {
     if (selectedChannel) {
       return (
-        <header className="channel-header">
-          <h2>
-            <span className="channel-hash" aria-hidden="true">
-              #{' '}
-            </span>
-            {selectedChannel.name}
-          </h2>
-          <p className="channel-description">
-            {selectedChannel.description || 'Sem descrição.'}
-          </p>
-        </header>
+        <>
+          <header className="channel-header">
+            <h2>
+              <span className="channel-hash" aria-hidden="true">
+                #{' '}
+              </span>
+              {selectedChannel.name}
+            </h2>
+            <p className="channel-description">
+              {selectedChannel.description || 'Sem descrição.'}
+            </p>
+          </header>
+
+          <MessagePanel channelId={selectedChannel.id} />
+        </>
       )
     }
 
     if (!isLoading && !error) {
       return (
-        <p className="placeholder">
+        <p className="channel-status">
           Nenhum canal ainda. Crie o primeiro canal para começar.
         </p>
       )

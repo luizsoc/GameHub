@@ -3,9 +3,11 @@ import { api } from './client'
 
 export async function getByChannel(
   channelId: string,
+  signal?: AbortSignal,
 ): Promise<MessageResponse[]> {
   const { data } = await api.get<MessageResponse[]>(
     `/messages/channel/${encodeURIComponent(channelId)}`,
+    { signal },
   )
   return data
 }
