@@ -62,7 +62,14 @@ function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
     }
 
     if (messages.length === 0) {
-      return <p className="channel-status">Nenhuma mensagem ainda.</p>
+      return (
+        <div className="channel-empty">
+          <p className="channel-empty-title">
+            Ainda não há mensagens em #{channelName}.
+          </p>
+          <p>Envie a primeira mensagem para começar a conversa.</p>
+        </div>
+      )
     }
 
     return <MessageList messages={messages} />

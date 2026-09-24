@@ -6,6 +6,8 @@ export interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  // The previous session ended on its own (expired or rejected), not by logout.
+  sessionExpired: boolean
   login: (email: string, password: string) => Promise<void>
   register: (username: string, email: string, password: string) => Promise<void>
   logout: () => void

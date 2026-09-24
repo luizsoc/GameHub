@@ -11,7 +11,7 @@ interface LoginErrors {
 }
 
 function LoginPage() {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, sessionExpired, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<LoginErrors>({})
@@ -43,7 +43,10 @@ function LoginPage() {
       // On success the auth state changes and <Navigate> above takes over.
       await login(email.trim(), password)
     } catch (error) {
-      setFormError(getErrorMessage(error))
+      // AuthController answers 401 only for invalid credentials.
+      setFormError(
+        getErrorMessage(error, { 401: 'E-mail ou senha inválidos.' }),
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -54,6 +57,12 @@ function LoginPage() {
       <h1>Entrar no GameHub</h1>
 
       <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting}>
+        {sessionExpired && !formError && (
+          <p className="form-notice" role="status">
+            Sua sessão expirou. Entre novamente para continuar.
+          </p>
+        )}
+
         {formError && (
           <p className="form-error" role="alert">
             {formError}

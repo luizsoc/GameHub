@@ -63,7 +63,7 @@ function ChannelSidebar({
 
       <div className="sidebar-footer">
         <button type="button" onClick={onCreateClick}>
-          + Criar canal
+          <span aria-hidden="true">+ </span>Criar canal
         </button>
       </div>
     </aside>

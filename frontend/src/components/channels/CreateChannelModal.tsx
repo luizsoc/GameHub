@@ -31,6 +31,14 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
     }
   }, [])
 
+  // Native close() returns focus to the button that opened the dialog.
+  // onClose() then unmounts it right away instead of waiting for the async
+  // "close" event (which Chromium only delivers on the next rendered frame).
+  function handleCancel() {
+    dialogRef.current?.close()
+    onClose()
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -51,10 +59,14 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
         description: description.trim() || null,
       })
 
-      // The parent closes (unmounts) the modal.
+      // Same as cancel: restore focus, then the parent unmounts the dialog.
+      dialogRef.current?.close()
       onCreated(channel)
     } catch (error) {
-      setFormError(getErrorMessage(error))
+      // ChannelsController answers 409 only for a duplicate name.
+      setFormError(
+        getErrorMessage(error, { 409: 'Já existe um canal com esse nome.' }),
+      )
       setIsSubmitting(false)
     }
   }
@@ -109,7 +121,7 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
           <button
             type="button"
             className="button-secondary"
-            onClick={onClose}
+            onClick={handleCancel}
             disabled={isSubmitting}
           >
             Cancelar

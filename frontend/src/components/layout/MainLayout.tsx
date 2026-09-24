@@ -61,9 +61,10 @@ function MainLayout() {
 
     if (!isLoading && !error) {
       return (
-        <p className="channel-status">
-          Nenhum canal ainda. Crie o primeiro canal para começar.
-        </p>
+        <div className="channel-empty">
+          <p className="channel-empty-title">Nenhum canal por aqui ainda.</p>
+          <p>Use “Criar canal” para abrir o primeiro e começar a conversar.</p>
+        </div>
       )
     }
 
@@ -76,7 +77,7 @@ function MainLayout() {
         <h1 className="app-title">GameHub</h1>
 
         <div className="user-menu">
-          <span>
+          <span className="user-name" title={user?.username}>
             <span className="user-label">Conectado como </span>
             <strong>{user?.username}</strong>
           </span>

@@ -50,7 +50,12 @@ function RegisterPage() {
       // Registers and then logs in automatically.
       await register(username.trim(), email.trim(), password)
     } catch (error) {
-      setFormError(getErrorMessage(error))
+      // AuthController answers 409 only for a duplicate username or e-mail.
+      setFormError(
+        getErrorMessage(error, {
+          409: 'Este nome de usuário ou e-mail já está em uso.',
+        }),
+      )
     } finally {
       setIsSubmitting(false)
     }

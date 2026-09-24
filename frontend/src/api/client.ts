@@ -5,6 +5,9 @@ import { getToken, removeToken } from '../auth/tokenStorage'
 // Requests go through the Vite dev proxy (see vite.config.ts).
 export const api = axios.create({
   baseURL: '/api',
+  // A backend that accepts the connection but never answers would otherwise
+  // leave every loading state spinning forever.
+  timeout: 15_000,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -59,6 +59,9 @@ function restoreSession(): Session | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(restoreSession)
+  // True when the session ended on its own (token expired or rejected by the
+  // API) rather than through logout, so the login page can say why.
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   // Restoration is synchronous today, so there is never a loading phase.
   // Kept in the context so consumers are ready if it ever becomes async.
@@ -67,10 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     removeToken()
     setSession(null)
+    setSessionExpired(false)
   }, [])
 
   // The HTTP client already removed the token; just reflect it in state.
-  useEffect(() => onUnauthorized(() => setSession(null)), [])
+  useEffect(
+    () =>
+      onUnauthorized(() => {
+        setSession(null)
+        setSessionExpired(true)
+      }),
+    [],
+  )
 
   // Drop the token locally once it expires.
   useEffect(() => {
@@ -79,12 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const timeout = setTimeout(
-      logout,
+      () => {
+        removeToken()
+        setSession(null)
+        setSessionExpired(true)
+      },
       Math.min(session.expiresAt - Date.now(), MAX_TIMEOUT_MS),
     )
 
     return () => clearTimeout(timeout)
-  }, [session, logout])
+  }, [session])
 
   const login = useCallback(async (email: string, password: string) => {
     const { token } = await authApi.login({ email, password })
@@ -96,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(token)
     setSession(newSession)
+    setSessionExpired(false)
   }, [])
 
   // The register endpoint does not return a token, so log in right after.
@@ -113,11 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token: session?.token ?? null,
       isAuthenticated: session !== null,
       isLoading,
+      sessionExpired,
       login,
       register,
       logout,
     }),
-    [session, isLoading, login, register, logout],
+    [session, isLoading, sessionExpired, login, register, logout],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

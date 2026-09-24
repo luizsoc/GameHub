@@ -12,8 +12,8 @@ export async function getByChannel(
   return data
 }
 
-// Note: the REST endpoint persists the message but does not broadcast it
-// over SignalR. Realtime sending will go through the ChatHub.
+// Not used by the UI: this REST endpoint persists the message but does not
+// broadcast it. The chat sends through the ChatHub (services/chatConnection).
 export async function send(
   request: SendMessageRequest,
 ): Promise<MessageResponse> {

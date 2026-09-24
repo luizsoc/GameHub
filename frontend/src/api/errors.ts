@@ -2,16 +2,34 @@ import { isAxiosError } from 'axios'
 
 const UNEXPECTED_ERROR = 'Ocorreu um erro inesperado. Tente novamente.'
 
+// Messages for statuses whose meaning is fixed by the endpoint's contract
+// (e.g. 401 on login always means invalid credentials). They take precedence
+// over the backend text, which is in English.
+type StatusMessages = Partial<Record<number, string>>
+
 // Turns an API failure into a message that is safe to show to the user.
 // Understands the backend's { message } bodies and ASP.NET ProblemDetails.
 // Anything else (HTML error pages, stack traces) is never displayed.
-export function getErrorMessage(error: unknown): string {
+export function getErrorMessage(
+  error: unknown,
+  statusMessages: StatusMessages = {},
+): string {
   if (!isAxiosError(error)) {
     return UNEXPECTED_ERROR
   }
 
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+    return 'O servidor demorou demais para responder. Tente novamente.'
+  }
+
   if (!error.response) {
     return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.'
+  }
+
+  const statusMessage = statusMessages[error.response.status]
+
+  if (statusMessage) {
+    return statusMessage
   }
 
   const backendMessage = readBackendMessage(error.response.data)

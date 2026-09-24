@@ -51,9 +51,19 @@ function MessageList({ messages }: MessageListProps) {
     }
   }, [messages])
 
+  // role="log" (implicitly aria-live="polite") announces messages that arrive
+  // after the history is on screen; the history itself is not read out.
+  // tabIndex lets keyboard users focus the region and scroll it.
   return (
-    <div className="message-scroll" ref={scrollRef} onScroll={handleScroll}>
-      <ol className="message-list" aria-label="Mensagens">
+    <div
+      className="message-scroll"
+      ref={scrollRef}
+      onScroll={handleScroll}
+      role="log"
+      aria-label="Mensagens do canal"
+      tabIndex={0}
+    >
+      <ol className="message-list">
         {messages.map((message) => (
           <li key={message.id} className="message">
             <div className="message-meta">

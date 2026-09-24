@@ -75,8 +75,17 @@ textarea:focus-visible {
   background: var(--hover);
 }
 
+button:not(.button-secondary, .channel-item):hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
 button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Disabled because a request is in flight, not because of invalid input. */
+[aria-busy='true'] button:disabled {
   cursor: progress;
 }
 
@@ -139,6 +148,15 @@ a {
   border-radius: 6px;
 }
 
+.form-notice {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warning);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
 .optional {
   color: var(--muted);
   font-weight: normal;
@@ -167,6 +185,7 @@ a {
 }
 
 .app-title {
+  flex-shrink: 0;
   margin: 0;
   font-size: 1.25rem;
 }
@@ -185,7 +204,16 @@ a {
 }
 
 .user-menu button {
+  flex-shrink: 0;
   padding: 0.4rem 0.8rem;
+}
+
+/* Usernames go up to 50 characters: truncate instead of overflowing. */
+.user-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Channel sidebar */
@@ -330,6 +358,24 @@ a {
   color: var(--danger);
 }
 
+.channel-empty {
+  margin: auto;
+  padding: 2rem 1.5rem;
+  color: var(--muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.channel-empty p {
+  margin: 0;
+}
+
+.channel-empty-title {
+  margin-bottom: 0.25rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* Messages */
 
 .message-scroll {
@@ -337,6 +383,11 @@ a {
   min-height: 0;
   overflow-y: auto;
   padding: 1rem 2rem 1.5rem;
+}
+
+.message-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .message-list {
@@ -413,18 +464,32 @@ a {
 
 .composer-form {
   display: flex;
+  align-items: flex-end;
   gap: 0.5rem;
 }
 
+/* One line by default; grows with Shift+Enter line breaks where the browser
+   supports field-sizing, and scrolls internally elsewhere. */
 .composer-input {
   flex: 1;
   min-width: 0;
+  max-height: 10rem;
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
+  line-height: 1.5;
+  resize: none;
+  field-sizing: content;
+}
+
+.composer-counter {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
 }
 
 .composer-notice,
@@ -483,8 +548,9 @@ a {
       'main';
   }
 
+  /* The channel list scrolls; keep most of the height for the chat itself. */
   .sidebar {
-    max-height: 40svh;
+    max-height: 30svh;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
