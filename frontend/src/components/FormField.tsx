@@ -6,6 +6,7 @@ interface FormFieldProps {
   onChange: (value: string) => void
   autoComplete: string
   error?: string
+  maxLength?: number
 }
 
 function FormField({
@@ -16,6 +17,7 @@ function FormField({
   onChange,
   autoComplete,
   error,
+  maxLength,
 }: FormFieldProps) {
   const errorId = `${id}-error`
 
@@ -28,6 +30,7 @@ function FormField({
         type={type}
         value={value}
         autoComplete={autoComplete}
+        maxLength={maxLength}
         required
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
