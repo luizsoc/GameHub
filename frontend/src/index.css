@@ -7,6 +7,8 @@
   --accent-text: #ffffff;
   --accent-soft: rgba(109, 40, 217, 0.12);
   --danger: #c62828;
+  --success: #1a7f37;
+  --warning: #9a6700;
   --surface: #f6f7f9;
   --hover: rgba(0, 0, 0, 0.05);
 
@@ -27,6 +29,8 @@
     --accent-text: #16171d;
     --accent-soft: rgba(167, 139, 250, 0.16);
     --danger: #f87171;
+    --success: #3fb950;
+    --warning: #d29922;
     --surface: #1d1f27;
     --hover: rgba(255, 255, 255, 0.06);
   }
@@ -284,8 +288,23 @@ a {
 }
 
 .channel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 1.5rem 2rem 1rem;
   border-bottom: 1px solid var(--border);
+}
+
+.channel-heading {
+  min-width: 0;
+}
+
+.channel-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .channel-header h2 {
@@ -352,6 +371,76 @@ a {
   overflow-wrap: anywhere;
 }
 
+/* Connection indicator */
+
+.connection-indicator {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.connection-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.connection-connected .connection-dot {
+  background: var(--success);
+}
+
+.connection-connecting .connection-dot,
+.connection-reconnecting .connection-dot {
+  background: var(--warning);
+}
+
+.connection-disconnected .connection-dot {
+  background: var(--danger);
+}
+
+/* Composer */
+
+.composer {
+  padding: 0.75rem 2rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.composer-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.composer-notice,
+.composer-error {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.composer-notice {
+  color: var(--muted);
+}
+
+.composer-error {
+  color: var(--danger);
+}
+
 /* Modal */
 
 .modal {
@@ -407,6 +496,10 @@ a {
   .channel-status,
   .message-scroll {
     padding-inline: 1rem;
+  }
+
+  .composer {
+    padding: 0.5rem 1rem 0.75rem;
   }
 
   .user-label {

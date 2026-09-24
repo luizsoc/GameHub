@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useChannels } from '../../hooks/useChannels'
+import { useChatConnection } from '../../hooks/useChatConnection'
 import type { ChannelResponse } from '../../types/channel'
 import ChannelSidebar from '../channels/ChannelSidebar'
 import CreateChannelModal from '../channels/CreateChannelModal'
+import ConnectionIndicator from '../messages/ConnectionIndicator'
 import MessagePanel from '../messages/MessagePanel'
 
 function MainLayout() {
   const { user, logout } = useAuth()
   const { channels, isLoading, error, reload, addChannel } = useChannels()
+  // Single SignalR connection for the authenticated session; logout unmounts
+  // this layout, which stops it.
+  const chat = useChatConnection()
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
@@ -30,18 +35,26 @@ function MainLayout() {
       return (
         <>
           <header className="channel-header">
-            <h2>
-              <span className="channel-hash" aria-hidden="true">
-                #{' '}
-              </span>
-              {selectedChannel.name}
-            </h2>
-            <p className="channel-description">
-              {selectedChannel.description || 'Sem descrição.'}
-            </p>
+            <div className="channel-heading">
+              <h2>
+                <span className="channel-hash" aria-hidden="true">
+                  #{' '}
+                </span>
+                {selectedChannel.name}
+              </h2>
+              <p className="channel-description">
+                {selectedChannel.description || 'Sem descrição.'}
+              </p>
+            </div>
+
+            <ConnectionIndicator status={chat.status} />
           </header>
 
-          <MessagePanel channelId={selectedChannel.id} />
+          <MessagePanel
+            channelId={selectedChannel.id}
+            channelName={selectedChannel.name}
+            chat={chat}
+          />
         </>
       )
     }

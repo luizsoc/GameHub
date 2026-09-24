@@ -17,25 +17,42 @@ function formatMessageDate(isoDate: string): string {
   return Number.isNaN(date.getTime()) ? isoDate : dateFormatter.format(date)
 }
 
+// How close to the bottom (px) still counts as "following" the conversation.
+const STICK_TO_BOTTOM_THRESHOLD_PX = 64
+
 interface MessageListProps {
   messages: MessageResponse[]
 }
 
 function MessageList({ messages }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Starts true so the history opens at the most recent message.
+  const isAtBottomRef = useRef(true)
 
-  // Show the most recent messages once the history is rendered.
+  function handleScroll() {
+    const container = scrollRef.current
+
+    if (container) {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight
+
+      isAtBottomRef.current = distanceFromBottom <= STICK_TO_BOTTOM_THRESHOLD_PX
+    }
+  }
+
+  // Follows new messages only while the user is at the bottom; someone
+  // reading older messages is never pulled away from them.
   // Layout effect: runs before paint, so there is no visible jump.
   useLayoutEffect(() => {
     const container = scrollRef.current
 
-    if (container) {
+    if (container && isAtBottomRef.current) {
       container.scrollTop = container.scrollHeight
     }
   }, [messages])
 
   return (
-    <div className="message-scroll" ref={scrollRef}>
+    <div className="message-scroll" ref={scrollRef} onScroll={handleScroll}>
       <ol className="message-list" aria-label="Mensagens">
         {messages.map((message) => (
           <li key={message.id} className="message">
