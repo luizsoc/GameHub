@@ -1,3 +1,8 @@
+# Local development database only.
+# The credentials below are development values (they match
+# backend/GameHub.Api/appsettings.Development.json) and must never be reused
+# in production, where the connection string comes from
+# ConnectionStrings__DefaultConnection.
 services:
   postgres:
     image: postgres:17
@@ -8,9 +13,15 @@ services:
       POSTGRES_USER: gamehub
       POSTGRES_PASSWORD: gamehub_dev_password
     ports:
-      - "5432:5432"
+      # Reachable from this machine only, not from the local network.
+      - "127.0.0.1:5432:5432"
     volumes:
       - gamehub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gamehub -d gamehub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   gamehub_postgres_data:

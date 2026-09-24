@@ -32,22 +32,18 @@ export function getErrorMessage(
     return statusMessage
   }
 
-  const backendMessage = readBackendMessage(error.response.data)
-
-  if (backendMessage) {
-    return backendMessage
-  }
-
   // The Vite proxy answers 502 when the backend is down.
   if ([502, 503, 504].includes(error.response.status)) {
     return 'Servidor indisponível no momento. Tente novamente em instantes.'
   }
 
+  // 5xx bodies are generic ProblemDetails (English title, no useful detail);
+  // the controllers only send { message } with 4xx.
   if (error.response.status >= 500) {
     return 'Erro inesperado no servidor. Tente novamente mais tarde.'
   }
 
-  return UNEXPECTED_ERROR
+  return readBackendMessage(error.response.data) ?? UNEXPECTED_ERROR
 }
 
 function readBackendMessage(data: unknown): string | null {

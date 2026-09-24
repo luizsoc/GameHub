@@ -4,16 +4,16 @@ import {
   type HubConnection,
 } from '@microsoft/signalr'
 import { getToken } from '../auth/tokenStorage'
+import { CHAT_HUB_URL } from '../config'
 import type { MessageResponse, SendMessageRequest } from '../types/message'
 
 // Contract of backend/GameHub.Api/Hubs/ChatHub.cs
-const HUB_URL = '/hubs/chat'
 const RECEIVE_MESSAGE = 'ReceiveMessage'
 
 export function createChatConnection(): HubConnection {
   return (
     new HubConnectionBuilder()
-      .withUrl(HUB_URL, {
+      .withUrl(CHAT_HUB_URL, {
         // Read on every (re)connect, so it always uses the current token from
         // the existing storage. In the browser the client sends it as
         // ?access_token=… on the WebSocket request, which the backend accepts

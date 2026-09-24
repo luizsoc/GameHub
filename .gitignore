@@ -3,8 +3,14 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
-# dotenv files
+# dotenv files (documented examples are versioned)
 .env
+.env.*
+!.env.example
+
+# Private keys and certificates
+*.pem
+*.key
 
 # User-specific files
 *.rsuser

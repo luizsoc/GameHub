@@ -1,10 +1,12 @@
 import axios, { isAxiosError } from 'axios'
 import { notifyUnauthorized } from '../auth/authEvents'
 import { getToken, removeToken } from '../auth/tokenStorage'
+import { API_BASE_URL } from '../config'
 
-// Requests go through the Vite dev proxy (see vite.config.ts).
+// "/api" by default: the Vite dev proxy locally, or a same-domain reverse
+// proxy in production. See src/config.ts for a separate API origin.
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   // A backend that accepts the connection but never answers would otherwise
   // leave every loading state spinning forever.
   timeout: 15_000,

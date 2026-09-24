@@ -54,6 +54,19 @@ src/
 └── types/        # Tipos espelhando os DTOs do backend
 ```
 
+## Produção
+
+O build usa URLs relativas (`/api`, `/hubs/chat`) por padrão, o que funciona
+quando um reverse proxy serve o frontend e o backend no mesmo domínio.
+
+Se a API estiver em outra origem, defina `VITE_API_URL` no momento do build
+(veja `.env.example`) e libere a origem do frontend no backend com
+`Cors__AllowedOrigins__0`. Variáveis `VITE_*` são públicas: nunca coloque
+segredos nelas.
+
+`npm run preview` serve o build de produção usando o mesmo proxy do
+desenvolvimento, para conferência local.
+
 ## Notas
 
 - O JWT fica no `localStorage` e é enviado como `Authorization: Bearer` nas chamadas REST
