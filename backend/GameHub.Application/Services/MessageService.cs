@@ -8,15 +8,18 @@ public class MessageService : IMessageService
 {
     private readonly IMessageRepository _messageRepository;
     private readonly IChannelRepository _channelRepository;
+    private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public MessageService(
         IMessageRepository messageRepository,
         IChannelRepository channelRepository,
+        IUserRepository userRepository,
         IUnitOfWork unitOfWork)
     {
         _messageRepository = messageRepository;
         _channelRepository = channelRepository;
+        _userRepository = userRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -45,6 +48,14 @@ public class MessageService : IMessageService
                 "Channel not found.");
         }
 
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user is null)
+        {
+            throw new KeyNotFoundException(
+                "User not found.");
+        }
+
         var message = new Message
         {
             Id = Guid.NewGuid(),
@@ -61,7 +72,7 @@ public class MessageService : IMessageService
             Id = message.Id,
             Content = message.Content,
             UserId = message.UserId,
-            Username = string.Empty,
+            Username = user.Username,
             ChannelId = message.ChannelId,
             CreatedAt = message.CreatedAt
         };

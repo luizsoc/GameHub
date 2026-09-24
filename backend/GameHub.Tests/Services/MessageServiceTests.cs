@@ -11,6 +11,7 @@ public class MessageServiceTests
 {
     private readonly Mock<IMessageRepository> _messageRepositoryMock = new();
     private readonly Mock<IChannelRepository> _channelRepositoryMock = new();
+    private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
 
     private MessageService CreateService()
@@ -18,6 +19,7 @@ public class MessageServiceTests
         return new MessageService(
             _messageRepositoryMock.Object,
             _channelRepositoryMock.Object,
+            _userRepositoryMock.Object,
             _unitOfWorkMock.Object);
     }
 
@@ -43,12 +45,17 @@ public class MessageServiceTests
             .Setup(x => x.GetByIdAsync(channelId))
             .ReturnsAsync(channel);
 
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId))
+            .ReturnsAsync(new User { Id = userId, Username = "luiz" });
+
         var service = CreateService();
 
         var result = await service.SendAsync(userId, request);
 
         result.Content.Should().Be("Hello GameHub!");
         result.UserId.Should().Be(userId);
+        result.Username.Should().Be("luiz");
         result.ChannelId.Should().Be(channelId);
 
         _messageRepositoryMock.Verify(
@@ -84,6 +91,10 @@ public class MessageServiceTests
         _channelRepositoryMock
             .Setup(x => x.GetByIdAsync(channelId))
             .ReturnsAsync(channel);
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId))
+            .ReturnsAsync(new User { Id = userId, Username = "luiz" });
 
         var service = CreateService();
 
@@ -156,6 +167,39 @@ public class MessageServiceTests
         await act.Should()
             .ThrowAsync<KeyNotFoundException>()
             .WithMessage("Channel not found.");
+    }
+
+    [Fact]
+    public async Task SendAsync_ShouldThrow_WhenUserDoesNotExist()
+    {
+        var userId = Guid.NewGuid();
+        var channelId = Guid.NewGuid();
+
+        var request = new SendMessageRequest
+        {
+            ChannelId = channelId,
+            Content = "Hello"
+        };
+
+        _channelRepositoryMock
+            .Setup(x => x.GetByIdAsync(channelId))
+            .ReturnsAsync(new Channel { Id = channelId, Name = "general" });
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId))
+            .ReturnsAsync((User?)null);
+
+        var service = CreateService();
+
+        var act = () => service.SendAsync(userId, request);
+
+        await act.Should()
+            .ThrowAsync<KeyNotFoundException>()
+            .WithMessage("User not found.");
+
+        _messageRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Message>()),
+            Times.Never);
     }
 
     [Fact]

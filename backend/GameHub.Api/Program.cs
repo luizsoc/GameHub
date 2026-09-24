@@ -53,6 +53,10 @@ builder.Services
     {
         var jwtKey = builder.Configuration["Jwt:Key"];
 
+        // Preserve the original JWT claim names (e.g. "sub")
+        // instead of mapping them to ClaimTypes.*.
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -63,6 +67,24 @@ builder.Services
             ValidateAudience = false,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+
+        // Browsers cannot send headers on WebSocket/SSE connections,
+        // so the SignalR client sends the token in the query string.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs/chat"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
