@@ -15,6 +15,20 @@ public class ChatHub : Hub
         _messageService = messageService;
     }
 
+    public async Task JoinChannel(Guid channelId)
+    {
+        await Groups.AddToGroupAsync(
+            Context.ConnectionId,
+            channelId.ToString());
+    }
+
+    public async Task LeaveChannel(Guid channelId)
+    {
+        await Groups.RemoveFromGroupAsync(
+            Context.ConnectionId,
+            channelId.ToString());
+    }
+
     public async Task SendMessage(SendMessageRequest request)
     {
         var userId = Context.UserIdentifier;
@@ -30,18 +44,5 @@ public class ChatHub : Hub
 
         await Clients.Group(request.ChannelId.ToString())
             .SendAsync("ReceiveMessage", message);
-    }
-    public async Task JoinChannel(Guid channelId)
-    {
-        await Groups.AddToGroupAsync(
-            Context.ConnectionId,
-            channelId.ToString());
-    }
-    
-    public async Task LeaveChannel(Guid channelId)
-    {
-        await Groups.RemoveFromGroupAsync(
-            Context.ConnectionId,
-            channelId.ToString());
     }
 }
