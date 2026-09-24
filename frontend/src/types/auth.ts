@@ -22,3 +22,11 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string
 }
+
+// Not a backend DTO: the logged-in user as rebuilt from the JWT claims
+// (sub, unique_name, email). There is no /me endpoint.
+export interface AuthUser {
+  id: string
+  username: string
+  email: string
+}

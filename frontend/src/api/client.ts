@@ -1,5 +1,6 @@
-import axios from 'axios'
-import { getToken } from '../auth/tokenStorage'
+import axios, { isAxiosError } from 'axios'
+import { notifyUnauthorized } from '../auth/authEvents'
+import { getToken, removeToken } from '../auth/tokenStorage'
 
 // Requests go through the Vite dev proxy (see vite.config.ts).
 export const api = axios.create({
@@ -18,3 +19,24 @@ api.interceptors.request.use((config) => {
 
   return config
 })
+
+// A 401 on a request that carried the *current* token means the session is
+// no longer valid. The request is never retried, so this cannot loop.
+// 401s on anonymous requests (e.g. invalid login credentials) are left alone,
+// and so are 401s for a token that has already been replaced.
+api.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      const token = getToken()
+      const sentAuthorization = error.config?.headers.Authorization
+
+      if (token && sentAuthorization === `Bearer ${token}`) {
+        removeToken()
+        notifyUnauthorized()
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
