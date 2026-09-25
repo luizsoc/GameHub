@@ -1,32 +1,290 @@
 # GameHub
 
-Comunidade de chat em tempo real para gamers: cadastro/login com JWT, canais,
-histórico de mensagens e chat em tempo real com SignalR.
+Comunidade de chat em tempo real para gamers. Usuários se cadastram, entram com
+JWT, criam canais e conversam em tempo real via SignalR, com o histórico de
+cada canal salvo em PostgreSQL.
 
-| Camada   | Stack |
-| -------- | ----- |
-| Backend  | .NET 10 · ASP.NET Core · Clean Architecture · EF Core · PostgreSQL · JWT · SignalR |
-| Frontend | React 19 · TypeScript · Vite · Axios · React Router · `@microsoft/signalr` |
+Backend em ASP.NET Core (.NET 10) com Clean Architecture; frontend em React +
+TypeScript com Vite.
+
+---
+
+## Sumário
+
+1. [Screenshots](#screenshots)
+2. [Funcionalidades](#funcionalidades)
+3. [Stack tecnológica](#stack-tecnológica)
+4. [Arquitetura](#arquitetura)
+5. [Autenticação e segurança](#autenticação-e-segurança)
+6. [Tempo real com SignalR](#tempo-real-com-signalr)
+7. [Banco de dados e migrations](#banco-de-dados-e-migrations)
+8. [Execução com Docker](#execução-com-docker)
+9. [Execução local](#execução-local)
+10. [Testes](#testes)
+11. [Estrutura de diretórios](#estrutura-de-diretórios)
+12. [Principais decisões técnicas](#principais-decisões-técnicas)
+13. [Possíveis melhorias futuras](#possíveis-melhorias-futuras)
+
+---
+
+## Screenshots
+
+> Seção reservada: as imagens serão adicionadas depois.
+
+| Tela | Imagem |
+| ---- | ------ |
+| Login | _em breve_ |
+| Cadastro | _em breve_ |
+| Chat (desktop) | _em breve_ |
+| Chat (mobile, menu lateral aberto) | _em breve_ |
+| Criar canal | _em breve_ |
+
+---
+
+## Funcionalidades
+
+**Contas e sessão**
+
+- Cadastro com nome de usuário e e-mail únicos (o e-mail é normalizado para
+  minúsculas) e login que retorna um JWT válido por 2 horas.
+- Sessão restaurada ao recarregar a página; quando o token expira, o usuário
+  volta ao login com o aviso "Sua sessão expirou".
+- Rotas protegidas e logout.
+
+**Canais**
+
+- Lista de canais em ordem alfabética e criação de canal com nome único e
+  descrição opcional (nome duplicado retorna "Já existe um canal com esse
+  nome.").
+
+**Mensagens**
+
+- Histórico completo do canal carregado via REST, em ordem cronológica.
+- Envio e recebimento em tempo real via SignalR, sem duplicar mensagens.
+- Mensagens seguidas do mesmo usuário, dentro de 5 minutos, agrupadas
+  visualmente; avatar com iniciais; separadores de data ("Hoje", "Ontem",
+  data completa); horário `HH:mm` com data completa no tooltip.
+- Campo de mensagem com Enter para enviar e Shift+Enter para nova linha, limite
+  de 2000 caracteres e contador a partir de 1800.
+- Rolagem automática apenas quando o usuário já está no fim da conversa.
+
+**Conexão**
+
+- Indicador de estado: Online, Conectando, Reconectando e Offline.
+- Reconexão automática, com reentrada no canal atual, e avisos acima do campo de
+  mensagem enquanto a conexão não está disponível.
+
+**Interface**
+
+- Tema escuro, layout desktop com barra lateral fixa e, abaixo de 768px, menu
+  lateral (drawer) com botão de abrir e fechar.
+- Estados de carregamento (skeleton), vazio e erro com "Tentar novamente".
+- Acessibilidade: navegação por teclado, foco visível, rótulos e mensagens de
+  erro associados aos campos, `role="log"` na conversa e respeito a
+  `prefers-reduced-motion`.
+
+---
+
+## Stack tecnológica
+
+| Camada | Tecnologias |
+| ------ | ----------- |
+| Backend | .NET 10, ASP.NET Core (Web API), SignalR, Entity Framework Core 10, Npgsql, JWT Bearer (HS256), `PasswordHasher` do ASP.NET Core Identity |
+| Banco de dados | PostgreSQL 17 (imagem Docker `postgres:17`) |
+| Frontend | React 19, TypeScript, Vite 8, React Router 7, Axios, `@microsoft/signalr`, Oxlint |
+| Testes | xUnit, Moq, FluentAssertions |
+| Infraestrutura | Docker, Docker Compose, EF Core migrations bundle |
+
+O frontend não usa biblioteca de componentes: o design system (tokens de cor,
+espaçamento e tipografia) e os ícones SVG são próprios. A fonte Inter é
+carregada do Google Fonts.
+
+---
+
+## Arquitetura
+
+O backend segue Clean Architecture, com dependências apontando para o domínio:
 
 ```
-backend/
-  GameHub.Api/             # Controllers, ChatHub, configuração (Program.cs)
-  GameHub.Application/     # Serviços, DTOs, interfaces
-  GameHub.Domain/          # Entidades
-  GameHub.Infrastructure/  # EF Core, repositórios, JWT, hash de senha
-  GameHub.Tests/           # Testes (xUnit)
-frontend/                  # SPA React (veja frontend/README.md)
-docker-compose.yml         # PostgreSQL local de desenvolvimento
+GameHub.Api  ──►  GameHub.Application  ──►  GameHub.Domain
+     │                    ▲
+     └──►  GameHub.Infrastructure ──┘
 ```
 
-## Desenvolvimento local
+| Projeto | Responsabilidade |
+| ------- | ---------------- |
+| `GameHub.Domain` | Entidades: `User`, `Channel`, `Message`, `ChannelMember`. |
+| `GameHub.Application` | Serviços (`AuthService`, `ChannelService`, `MessageService`), DTOs e interfaces (repositórios, JWT, hash de senha, unit of work). |
+| `GameHub.Infrastructure` | `GameHubDbContext` (EF Core + PostgreSQL), repositórios, migrations, `JwtService` e hash de senha. |
+| `GameHub.Api` | Controllers REST, `ChatHub` (SignalR), autenticação e configuração em `Program.cs`. |
 
-Pré-requisitos: .NET 10 SDK, Node.js (`^20.19.0` ou `>=22.12.0`), Docker e a
-ferramenta `dotnet-ef` (`dotnet tool install --global dotnet-ef`).
+O frontend é uma SPA que usa REST para dados (canais, histórico, autenticação)
+e SignalR para as mensagens em tempo real.
+
+### API REST
+
+Todas as rotas, exceto as de autenticação, exigem `Authorization: Bearer <token>`.
+
+| Método | Rota | Descrição |
+| ------ | ---- | --------- |
+| `POST` | `/api/auth/register` | Cadastro (409 se nome de usuário ou e-mail já existem). |
+| `POST` | `/api/auth/login` | Login; retorna `{ token }` (401 com credenciais inválidas). |
+| `GET` | `/api/channels` | Lista os canais em ordem alfabética. |
+| `GET` | `/api/channels/{id}` | Detalhe de um canal. |
+| `POST` | `/api/channels` | Cria um canal (409 se o nome já existe). |
+| `GET` | `/api/messages/channel/{channelId}` | Histórico do canal. |
+| `POST` | `/api/messages` | Salva uma mensagem (não é transmitida em tempo real; o frontend envia pelo hub). |
+
+---
+
+## Autenticação e segurança
+
+- **Senhas** com hash pelo `PasswordHasher` do ASP.NET Core Identity.
+- **JWT HS256** com as claims `sub` (id do usuário), `unique_name` e `email`,
+  válido por 2 horas. A validação confere assinatura, algoritmo (apenas
+  HS256) e expiração, sem tolerância de relógio.
+- **Sem segredos no repositório.** A connection string e a chave JWT vêm da
+  configuração: User Secrets em Development, variáveis de ambiente fora dele
+  e `.env` (não versionado) no Docker. A aplicação não inicia se algum dos dois
+  faltar ou se a chave tiver menos de 32 bytes, com uma mensagem indicando o
+  que configurar.
+- **Fora de Development:** erros não tratados retornam ProblemDetails genérico
+  (sem stack trace nem detalhes internos) e HSTS fica habilitado.
+- **Cabeçalhos em todas as respostas:** `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer`.
+- **CORS** desligado por padrão (mesma origem); origens extras podem ser
+  liberadas por configuração.
+- **Frontend:** o token fica no `localStorage` e só é decodificado para exibir
+  o usuário e agendar o fim da sessão; quem valida é sempre o backend. Nenhum
+  segredo vai para o bundle: tudo que começa com `VITE_` é público.
+- **Token na query string do SignalR:** o navegador não envia cabeçalhos em
+  WebSocket, então o token vai em `access_token`, aceito apenas em
+  `/hubs/chat`. Por isso **não reduza o log de `Microsoft.AspNetCore` para
+  `Information` em produção**: a URL com o token apareceria nos logs.
+- **Chave antiga:** a chave JWT de desenvolvimento usada nas primeiras versões
+  ficou no histórico do Git e deve ser considerada comprometida. Nunca a
+  reutilize; cada ambiente deve gerar a sua.
+
+### Configuração
+
+A última fonte vence: `appsettings.json` → `appsettings.{Environment}.json` →
+User Secrets (apenas em Development) → variáveis de ambiente.
+
+| Chave (variável de ambiente) | Obrigatória | Descrição |
+| ---------------------------- | ----------- | --------- |
+| `ConnectionStrings__DefaultConnection` | Sim | Connection string do PostgreSQL. Em Development vem de `appsettings.Development.json`; no Docker é montada pelo `docker-compose.yml`. |
+| `Jwt__Key` | Sim | Chave HMAC-SHA256 com no mínimo 32 bytes. Em Development vem de User Secrets; no Docker, de `JWT_KEY` no `.env`. |
+| `ASPNETCORE_ENVIRONMENT` | Não | `Development` no `dotnet run` (perfil de lançamento); `Production` (padrão) no Docker. |
+| `Cors__AllowedOrigins__0`, `__1`, … | Não | Origens do frontend quando ele é servido em outra origem que a API. Vazio = apenas mesma origem. |
+| `VITE_API_URL` (build do frontend) | Não | Origem da API quando ela está em outro domínio. Vazio = URLs relativas (`/api`, `/hubs/chat`). Veja `frontend/.env.example`. |
+
+---
+
+## Tempo real com SignalR
+
+Hub: `/hubs/chat` (`ChatHub`, exige autenticação).
+
+| Direção | Método | Descrição |
+| ------- | ------ | --------- |
+| Cliente → servidor | `JoinChannel(channelId)` | Entra no grupo do canal. |
+| Cliente → servidor | `LeaveChannel(channelId)` | Sai do grupo do canal. |
+| Cliente → servidor | `SendMessage({ content, channelId })` | Salva a mensagem e a transmite ao grupo do canal. |
+| Servidor → cliente | `ReceiveMessage(message)` | Mensagem nova, com `id`, `content`, `userId`, `username`, `channelId` e `createdAt`. |
+
+- O usuário da conexão é identificado pela claim `sub` do JWT (um
+  `IUserIdProvider` próprio, com `MapInboundClaims = false`).
+- O frontend mantém uma única conexão por sessão, com reconexão automática
+  (`withAutomaticReconnect`). Ao trocar de canal, sai do grupo anterior e entra
+  no novo; depois de uma reconexão, entra de novo no canal atual.
+- O histórico chega por REST e as mensagens novas por SignalR. As duas fontes
+  são combinadas por `id`, sem duplicatas. Não há mensagem otimista: a sua
+  própria mensagem aparece quando o `ReceiveMessage` chega.
+- Se a conexão inicial falhar ou a reconexão desistir, o estado fica "Offline"
+  e o aviso pede para recarregar a página.
+
+---
+
+## Banco de dados e migrations
+
+Tabelas (EF Core + PostgreSQL):
+
+| Tabela | Conteúdo | Restrições principais |
+| ------ | -------- | --------------------- |
+| `Users` | Usuários | `Username` (até 50) e `Email` (até 255) únicos |
+| `Channels` | Canais | `Name` (até 100) único; `Description` até 500 |
+| `Messages` | Mensagens | `Content` até 2000; índice em (`ChannelId`, `CreatedAt`) |
+| `ChannelMembers` | Associação usuário–canal | Existe no modelo, mas ainda não é usada pela aplicação |
+
+Migrations em `backend/GameHub.Infrastructure/Migrations`: `InitialCreate` e
+`CreateChatEntities`. A aplicação **não** aplica migrations sozinha ao iniciar;
+elas são aplicadas explicitamente:
+
+- **Docker:** a imagem inclui um *migrations bundle* do EF Core (`efbundle`),
+  executado pelo serviço `migrate` antes da API subir. Pode ser rodado de novo
+  sem efeito se não houver migrations pendentes.
+- **Local:** `dotnet ef database update` (veja [Execução local](#execução-local)).
+
+---
+
+## Execução com Docker
+
+O Docker Compose sobe o **PostgreSQL** e o **backend (API + SignalR)**. O
+**frontend continua rodando localmente com o Vite**, cujo proxy encaminha
+`/api` e `/hubs` para o backend em Docker.
+
+Pré-requisitos: Docker (com Compose) e Node.js `^20.19.0` ou `>=22.12.0`.
 
 ```bash
-# 1. Banco de dados (credenciais locais de desenvolvimento)
-docker compose up -d
+# 1. Segredos locais (o .env não é versionado)
+cp .env.example .env
+
+# 2. Gere uma chave e coloque-a em JWT_KEY no .env
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+
+# 3. PostgreSQL + migrations + backend (http://localhost:5116)
+docker compose up -d --build
+
+# 4. Frontend (http://localhost:5173), em outro terminal
+cd frontend
+npm install
+npm run dev
+```
+
+| Serviço | O que faz |
+| ------- | --------- |
+| `postgres` | PostgreSQL 17 com healthcheck (`pg_isready`) e dados no volume `gamehub_postgres_data`. Porta publicada apenas em `127.0.0.1:5432`, para o fluxo local sem Docker. |
+| `migrate` | Aguarda o banco ficar saudável, aplica as migrations pendentes e encerra. |
+| `api` | Sobe só depois que o `migrate` termina com sucesso. Acessa o banco pelo nome do serviço (`postgres`), roda como `Production` com usuário sem privilégios e é publicado em `127.0.0.1:5116`. |
+
+Comandos úteis:
+
+```bash
+docker compose ps               # estado dos serviços
+docker compose logs -f api      # logs do backend
+docker compose down             # para e remove os containers (mantém os dados)
+docker compose down -v          # também apaga o volume do banco
+```
+
+Sem `JWT_KEY` no `.env`, o `migrate` falha com a mensagem da aplicação e o
+`api` não sobe.
+
+---
+
+## Execução local
+
+Backend com `dotnet run`, usando o **PostgreSQL do Docker**, e frontend com o
+Vite.
+
+Pré-requisitos: .NET 10 SDK, Node.js `^20.19.0` ou `>=22.12.0`, Docker e a
+ferramenta `dotnet-ef`:
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+```bash
+# 1. Somente o banco de dados (credenciais locais de desenvolvimento)
+docker compose up -d postgres
 
 # 2. Chave JWT de desenvolvimento, fora do repositório (User Secrets)
 dotnet user-secrets set "Jwt:Key" "$(node -e "console.log(require('crypto').randomBytes(48).toString('base64'))")" --project backend/GameHub.Api
@@ -34,66 +292,138 @@ dotnet user-secrets set "Jwt:Key" "$(node -e "console.log(require('crypto').rand
 # 3. Migrations
 dotnet ef database update --project backend/GameHub.Infrastructure --startup-project backend/GameHub.Api
 
-# 4. Backend (http://localhost:5116)
+# 4. Backend (http://localhost:5116, ambiente Development)
 dotnet run --project backend/GameHub.Api --launch-profile http
 
 # 5. Frontend (http://localhost:5173), em outro terminal
-cd frontend && npm install && npm run dev
+cd frontend
+npm install
+npm run dev
 ```
 
-Em desenvolvimento o Vite encaminha `/api` e `/hubs` para o backend, então não
-há CORS envolvido.
+O backend local e o `api` do Docker usam a mesma porta (5116): rode um de cada
+vez (`docker compose stop api`).
 
-Testes e qualidade:
+Scripts do frontend:
+
+| Script | Descrição |
+| ------ | --------- |
+| `npm run dev` | Servidor de desenvolvimento (proxy `/api` e `/hubs` → `http://localhost:5116`) |
+| `npm run build` | Checagem de tipos (`tsc -b`) + build de produção |
+| `npm run lint` | Oxlint |
+| `npm run preview` | Serve o build de produção localmente, com o mesmo proxy |
+
+---
+
+## Testes
 
 ```bash
+# Backend: testes automatizados (xUnit)
 dotnet test GameHub.slnx
-cd frontend && npm run lint && npm run build
+
+# Frontend: lint + checagem de tipos e build
+cd frontend
+npm run lint
+npm run build
 ```
 
-## Configuração
+O backend tem 27 testes em `backend/GameHub.Tests`:
 
-Nenhum segredo fica no repositório. O backend lê a configuração nesta ordem
-(a última vence): `appsettings.json` → `appsettings.{Environment}.json` →
-User Secrets (apenas em Development) → variáveis de ambiente.
+| Arquivo | Testes | O que cobre |
+| ------- | ------ | ----------- |
+| `Services/AuthServiceTests.cs` | 11 | Cadastro e login: campos vazios, nome de usuário ou e-mail duplicado, e-mail inexistente e senha incorreta. |
+| `Services/MessageServiceTests.cs` | 8 | Envio (incluindo remoção de espaços nas pontas, conteúdo vazio, canal ou usuário inexistente) e histórico. |
+| `Services/ChannelServiceTests.cs` | 5 | Criação (incluindo nome vazio ou duplicado) e busca por id. |
+| `Security/JwtServiceTests.cs` | 2 | Geração de um JWT válido e erro quando a chave não está configurada. |
+| `UnitTest1.cs` | 1 | Teste vazio do template do xUnit. |
 
-| Chave (variável de ambiente)              | Obrigatória | Descrição |
-| ----------------------------------------- | ----------- | --------- |
-| `ASPNETCORE_ENVIRONMENT`                  | —           | `Development` localmente; `Production` (padrão) em deploy. |
-| `ConnectionStrings__DefaultConnection`    | Sim         | Connection string do PostgreSQL. Em Development vem de `appsettings.Development.json` (banco local do Docker). |
-| `Jwt__Key`                                | Sim         | Chave HMAC-SHA256 com **no mínimo 32 bytes**. Em Development vem de User Secrets. |
-| `Cors__AllowedOrigins__0`, `__1`, …       | Não         | Origens do frontend quando ele é servido em outra origem que a API (ex.: `https://app.example.com`). Vazio = apenas mesma origem. |
+São testes de unidade com repositórios simulados (Moq); não há testes de
+integração com banco ou servidor real. O frontend não tem testes automatizados:
+a verificação é o lint e a checagem de tipos do build.
 
-A aplicação não inicia se a connection string ou a chave JWT estiverem ausentes
-(ou se a chave for curta demais), com uma mensagem indicando o que configurar.
+---
 
-Frontend (build): `VITE_API_URL` é opcional e só é necessário quando a API
-fica em outra origem. **Tudo que começa com `VITE_` é público no bundle** —
-nunca coloque segredos ali. Veja `frontend/.env.example`.
+## Estrutura de diretórios
 
-### Topologias de produção suportadas
+```
+GameHub/
+├── backend/
+│   ├── GameHub.Api/             # Controllers, ChatHub, Program.cs, appsettings
+│   ├── GameHub.Application/     # Serviços, DTOs, interfaces
+│   ├── GameHub.Domain/          # Entidades
+│   ├── GameHub.Infrastructure/  # DbContext, repositórios, migrations, JWT, hash de senha
+│   ├── GameHub.Tests/           # Testes xUnit
+│   ├── Dockerfile               # Imagem da API + migrations bundle
+│   └── .dockerignore
+├── frontend/
+│   ├── src/
+│   │   ├── api/                 # Cliente Axios, chamadas REST, mensagens de erro
+│   │   ├── auth/                # AuthContext, token, validações
+│   │   ├── components/
+│   │   │   ├── channels/        # Barra lateral, lista e criação de canais
+│   │   │   ├── layout/          # MainLayout, AuthLayout, painel do usuário
+│   │   │   ├── messages/        # Lista, mensagem, composer, indicador de conexão
+│   │   │   └── ui/              # Button, Alert, Avatar, Skeleton, EmptyState, ícones
+│   │   ├── hooks/               # useChannels, useMessages, useChatConnection, useChannelRealtime
+│   │   ├── pages/               # Login e cadastro
+│   │   ├── services/            # Conexão SignalR
+│   │   ├── types/               # Tipos espelhando os DTOs do backend
+│   │   ├── config.ts            # URLs da API e do hub
+│   │   └── index.css            # Design system (tokens) e estilos
+│   ├── vite.config.ts           # Proxy de desenvolvimento
+│   └── .env.example
+├── docker-compose.yml           # PostgreSQL + migrate + API
+├── .env.example                 # Variáveis do Docker Compose (JWT_KEY)
+└── GameHub.slnx
+```
 
-- **Mesmo domínio (recomendado):** um reverse proxy serve o frontend e
-  encaminha `/api` e `/hubs` (com WebSocket) para o backend. Não precisa de
-  `VITE_API_URL` nem de CORS.
-- **Origens separadas:** build do frontend com `VITE_API_URL=https://api...` e
-  backend com `Cors__AllowedOrigins__0=https://app...`.
+---
 
-## Segurança
+## Principais decisões técnicas
 
-- Senhas com hash (`PasswordHasher` do ASP.NET Core Identity); tokens JWT
-  HS256 com expiração de 2 horas, validação de assinatura, algoritmo e
-  expiração (sem tolerância de relógio).
-- Fora de Development, erros não tratados retornam ProblemDetails genérico (sem
-  stack trace ou detalhes internos) e HSTS é habilitado. Todas as respostas
-  incluem `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`.
-- O token do SignalR vai na query string (`access_token`) da conexão WebSocket,
-  como exige o navegador. Por isso **não reduza o nível de log de
-  `Microsoft.AspNetCore` para `Information` em produção**: o log de requisições
-  incluiria a URL com o token.
-- Atrás de um reverse proxy que termina TLS, será necessário configurar
-  *forwarded headers* para que HTTPS e HSTS reflitam o esquema original
-  (etapa de deploy).
-- A chave JWT de desenvolvimento usada nas primeiras versões ficou no histórico
-  do Git e deve ser considerada comprometida: nunca a reutilize. Cada ambiente
-  deve gerar a sua.
+- **Clean Architecture no backend:** regras nos serviços da camada Application,
+  acesso a dados e segurança na Infrastructure, e a Api só expõe HTTP e
+  SignalR.
+- **REST para dados, SignalR para o tempo real:** o histórico vem de uma
+  requisição simples e o hub cuida só do que acontece depois, com os dois
+  fluxos combinados por `id` no frontend.
+- **Identidade pela claim `sub`:** `MapInboundClaims = false` preserva os nomes
+  originais do JWT, e o SignalR usa a mesma claim para identificar o usuário.
+- **Falha rápida na configuração:** a API não sobe com connection string ou
+  chave JWT ausentes, em vez de falhar na primeira requisição.
+- **Mesma origem por padrão:** em desenvolvimento, o proxy do Vite encaminha
+  `/api` e `/hubs` (incluindo WebSocket), então não há CORS. Em produção, o
+  recomendado é um reverse proxy servindo frontend e API no mesmo domínio;
+  origens separadas são suportadas com `VITE_API_URL` e
+  `Cors__AllowedOrigins__0`.
+- **Migrations explícitas:** nada é aplicado automaticamente pela aplicação; no
+  Docker um serviço dedicado (`migrate`) roda o bundle do EF Core antes da API.
+- **Frontend sem biblioteca de UI:** design system próprio (tokens em
+  `index.css`), ícones SVG locais, `<dialog>` nativo para o modal e `inert` no
+  menu lateral mobile para manter o foco dentro dele.
+
+---
+
+## Possíveis melhorias futuras
+
+Pontos observados no código atual:
+
+- **Paginação do histórico:** hoje `GET /api/messages/channel/{id}` retorna
+  todas as mensagens do canal.
+- **Envio via REST:** `POST /api/messages` salva sem transmitir pelo SignalR;
+  transmitir também, ou manter apenas o envio pelo hub.
+- **Participação em canais:** a tabela `ChannelMembers` existe, mas ainda não
+  é usada.
+- **Validação no backend:** tamanho máximo de nome de usuário e de canal e
+  política de senha (hoje só é exigido que não estejam vazios).
+- **Sessão:** não há renovação de token (refresh token); após 2 horas é
+  preciso entrar de novo. Avaliar cookie `HttpOnly` no lugar do `localStorage`.
+- **Conexão Offline:** oferecer um botão "Tentar novamente" em vez de pedir
+  para recarregar a página.
+- **Testes:** testes de integração (API + banco) e testes automatizados no
+  frontend; remover o teste vazio `UnitTest1`.
+- **Dependências:** `Serilog.AspNetCore` e `FluentValidation` estão
+  referenciados, mas não são usados; adotar ou remover.
+- **Deploy:** HTTPS/forwarded headers atrás de reverse proxy, healthcheck da
+  API, frontend servido em container ou CDN e persistência das chaves de Data
+  Protection do ASP.NET Core (hoje ficam dentro do container).

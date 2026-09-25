@@ -1,0 +1,10 @@
+# Build outputs from the host would clash with the container's restore/build.
+**/bin/
+**/obj/
+
+# Not needed in the image.
+GameHub.Tests/
+**/*.user
+**/.vs/
+Dockerfile
+.dockerignore

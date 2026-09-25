@@ -13,13 +13,15 @@ Interface web do GameHub, uma comunidade de chat em tempo real para gamers.
 - Chat em tempo real via SignalR: entrada/saída de grupos por canal, reconexão automática,
   deduplicação por `id` e indicador de conexão
 - Auto-scroll que acompanha novas mensagens apenas quando o usuário já está no fim da lista
-- Layout responsivo e tema claro/escuro automático
+- Layout responsivo e tema escuro (o único tema disponível)
 
 ## Pré-requisitos
 
 - Node.js `^20.19.0` ou `>=22.12.0` (exigência do Vite 8)
-- Backend do GameHub rodando em `http://localhost:5116` (perfil `http` de `backend/GameHub.Api`)
-  e PostgreSQL (`docker compose up -d` na raiz do repositório)
+- Backend do GameHub respondendo em `http://localhost:5116`. O jeito mais simples é o
+  Docker Compose na raiz do repositório, que sobe PostgreSQL + API (requer `JWT_KEY` no
+  `.env`, veja `.env.example` e o README da raiz). O frontend continua rodando localmente
+  com o Vite, fora do Docker.
 
 ## Como executar
 
