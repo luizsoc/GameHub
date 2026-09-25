@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Alert, type AlertVariant } from '../ui/Alert'
 import { Button } from '../ui/Button'
+import { IconSend } from '../ui/icons'
 
 export interface ComposerNotice {
   variant: AlertVariant
@@ -15,6 +16,7 @@ const COUNTER_THRESHOLD = MESSAGE_MAX_LENGTH - 200
 const NOTICE_ID = 'composer-notice'
 const ERROR_ID = 'composer-error'
 const COUNTER_ID = 'composer-counter'
+const HINT_ID = 'composer-hint'
 
 interface MessageComposerProps {
   channelName: string
@@ -36,13 +38,19 @@ function MessageComposer({
   const trimmedContent = content.trim()
   const canSend = isConnected && !isSending && trimmedContent !== ''
   const showCounter = content.length >= COUNTER_THRESHOLD
+  const isAtLimit = content.length >= MESSAGE_MAX_LENGTH
 
   // Ties the notice/error/counter to the field for screen readers, so the
-  // reason the send button is disabled is announced with it.
-  const describedBy =
-    [notice && NOTICE_ID, error && ERROR_ID, showCounter && COUNTER_ID]
-      .filter(Boolean)
-      .join(' ') || undefined
+  // reason the send button is disabled is announced with it. The keyboard
+  // hint comes last.
+  const describedBy = [
+    notice && NOTICE_ID,
+    error && ERROR_ID,
+    showCounter && COUNTER_ID,
+    HINT_ID,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -90,6 +98,7 @@ function MessageComposer({
         </Alert>
       )}
 
+      {/* The form is the raised box: field and send button share one frame. */}
       <form className="composer-form" onSubmit={handleSubmit} aria-busy={isSending}>
         <textarea
           className="composer-input"
@@ -107,16 +116,32 @@ function MessageComposer({
             setError(null)
           }}
         />
-        <Button type="submit" disabled={!canSend} isLoading={isSending}>
+        <Button
+          type="submit"
+          size="sm"
+          icon={<IconSend />}
+          disabled={!canSend}
+          isLoading={isSending}
+        >
           {isSending ? 'Enviando…' : 'Enviar'}
         </Button>
       </form>
 
-      {showCounter && (
-        <p id={COUNTER_ID} className="composer-counter">
-          {content.length}/{MESSAGE_MAX_LENGTH} caracteres
+      <div className="composer-footer">
+        <p id={HINT_ID} className="composer-hint">
+          <kbd>Enter</kbd> para enviar <span aria-hidden="true">•</span>{' '}
+          <kbd>Shift</kbd>+<kbd>Enter</kbd> para nova linha
         </p>
-      )}
+
+        {showCounter && (
+          <p
+            id={COUNTER_ID}
+            className={isAtLimit ? 'composer-counter composer-counter-limit' : 'composer-counter'}
+          >
+            {content.length}/{MESSAGE_MAX_LENGTH} caracteres
+          </p>
+        )}
+      </div>
     </div>
   )
 }

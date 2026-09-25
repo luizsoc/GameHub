@@ -607,8 +607,7 @@ button {
 
 /* Fields show focus with their own border plus a soft halo. */
 .field input:focus-visible,
-.field textarea:focus-visible,
-.composer-input:focus-visible {
+.field textarea:focus-visible {
   outline: none;
   border-color: var(--focus-ring-color);
   box-shadow: var(--focus-ring-halo);
@@ -1076,6 +1075,10 @@ button {
   font-size: var(--font-size-xs);
   font-weight: 500;
   white-space: nowrap;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
 }
 
 .connection-dot {
@@ -1093,10 +1096,34 @@ button {
 .connection-connecting .connection-dot,
 .connection-reconnecting .connection-dot {
   background: var(--warning);
+  animation: connection-pulse 1.2s ease-in-out infinite;
+}
+
+/* Problems tint the whole pill so they stand out from the calm "Online". */
+.connection-reconnecting {
+  --status-color: var(--warning);
+}
+
+.connection-disconnected {
+  --status-color: var(--danger);
+}
+
+.connection-reconnecting,
+.connection-disconnected {
+  border-color: color-mix(in srgb, var(--status-color) 40%, transparent);
+  background: color-mix(in srgb, var(--status-color) 10%, transparent);
+  color: var(--status-color);
 }
 
 .connection-disconnected .connection-dot {
   background: var(--danger);
+}
+
+/* Stops under prefers-reduced-motion (global rule): the dot stays solid. */
+@keyframes connection-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 /* ==========================================================================
@@ -1104,49 +1131,126 @@ button {
    ========================================================================== */
 
 .composer {
-  padding: var(--space-3) var(--space-8) var(--space-4);
-  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-2) var(--space-8) var(--space-3);
 }
 
+/* Raised frame around the field and the send button. It shows the field's
+   focus; the transparent outline becomes visible in forced-colors mode. */
 .composer-form {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.composer-form:has(.composer-input:focus-visible) {
+  border-color: var(--focus-ring-color);
+  outline: 2px solid transparent;
+  box-shadow: var(--focus-ring-halo), var(--shadow-card);
 }
 
 /* One line by default; grows with Shift+Enter line breaks where the browser
-   supports field-sizing, and scrolls internally elsewhere. */
+   supports field-sizing, and scrolls internally elsewhere. Same height as the
+   small send button. */
 .composer-input {
   flex: 1;
   min-width: 0;
+  min-height: var(--space-8);
   max-height: 160px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-md);
-  background: var(--bg-raised);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-size: var(--font-size-body);
   line-height: var(--line-height-normal);
   resize: none;
   field-sizing: content;
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.composer-input:focus-visible {
+  outline: none;
+}
+
+/* The placeholder names the channel: one line, never a taller empty field. */
+.composer-input::placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+/* One line: truncates instead of wrapping on narrow screens. */
+.composer-hint {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-hint kbd {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 500;
 }
 
 .composer-counter {
-  margin: var(--space-1) 0 0;
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+  margin: 0 0 0 auto;
   font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
-/* Compact alerts above the input. */
+.composer-counter-limit {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Touch keyboards have no Shift+Enter: drop the hint, and the row with it
+   unless the counter is showing. */
+@media (hover: none) and (pointer: coarse) {
+  .composer-hint {
+    display: none;
+  }
+
+  .composer-footer:not(:has(.composer-counter)) {
+    display: none;
+  }
+}
+
+/* Compact alerts above the input, eased in. */
 .composer .alert {
   margin-bottom: var(--space-2);
   padding: var(--space-2) var(--space-3);
+  animation: composer-notice-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes composer-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
 }
 
 /* ==========================================================================
