@@ -29,15 +29,20 @@ TypeScript com Vite.
 
 ## Screenshots
 
-> Seção reservada: as imagens serão adicionadas depois.
+![Chat no desktop: canal counter-strike-2 com mensagens agrupadas por autor, separadores de data e conexão Online](docs/screenshots/chat-desktop.png)
 
-| Tela | Imagem |
-| ---- | ------ |
-| Login | _em breve_ |
-| Cadastro | _em breve_ |
-| Chat (desktop) | _em breve_ |
-| Chat (mobile, menu lateral aberto) | _em breve_ |
-| Criar canal | _em breve_ |
+<p align="center"><sub>Chat no desktop: mensagens agrupadas por autor, separadores de data e status da conexão em tempo real.</sub></p>
+
+| Login | Criar canal |
+| :---: | :---: |
+| ![Tela de login do GameHub com campos de e-mail e senha](docs/screenshots/login.png) | ![Modal de criação de canal com nome e descrição preenchidos](docs/screenshots/create-channel.png) |
+| Entrada com e-mail e senha. | Novo canal com nome e descrição opcional. |
+
+<p align="center">
+  <img src="docs/screenshots/chat-mobile.png" alt="Chat no celular: barra superior com menu, conversa e campo de mensagem">
+</p>
+
+<p align="center"><sub>Mobile (375×812): barra superior com menu lateral, conversa e campo de mensagem.</sub></p>
 
 ---
 
