@@ -957,8 +957,11 @@ button {
 }
 
 /* Avatar column + text. Follow-ups keep the same columns, so every line of a
-   group starts at the same edge. */
+   group starts at the same edge. position: relative keeps their
+   screen-reader-only text (absolutely positioned) inside the scrolling list;
+   without it that text stretched the page itself. */
 .message {
+  position: relative;
   display: grid;
   grid-template-columns: var(--space-10) minmax(0, 1fr);
   column-gap: var(--space-3);
