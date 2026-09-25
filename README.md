@@ -494,6 +494,9 @@ Pontos observados no código atual:
   transmitir também, ou manter apenas o envio pelo hub.
 - **Participação em canais:** a tabela `ChannelMembers` existe, mas ainda não
   é usada.
+- **Lista de canais em tempo real:** a criação de um canal por outro usuário
+  não atualiza automaticamente a lista de canais nas sessões já abertas;
+  atualmente é necessário recarregar a lista.
 - **Política de senha:** hoje só é exigido que a senha não esteja vazia.
 - **Sessão:** não há renovação de token (refresh token); após 2 horas é
   preciso entrar de novo. Avaliar cookie `HttpOnly` no lugar do `localStorage`.
