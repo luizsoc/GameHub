@@ -1,4 +1,11 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Alert, type AlertVariant } from '../ui/Alert'
+import { Button } from '../ui/Button'
+
+export interface ComposerNotice {
+  variant: AlertVariant
+  message: string
+}
 
 // Message.Content column limit (GameHubDbContext); the hub does not check it.
 const MESSAGE_MAX_LENGTH = 2000
@@ -12,7 +19,7 @@ const COUNTER_ID = 'composer-counter'
 interface MessageComposerProps {
   channelName: string
   isConnected: boolean
-  notice: string | null
+  notice: ComposerNotice | null
   onSend: (content: string) => Promise<void>
 }
 
@@ -69,16 +76,18 @@ function MessageComposer({
 
   return (
     <div className="composer">
+      {/* No role: announced through the textarea's aria-describedby, and the
+          connection indicator already reports the status change. */}
       {notice && (
-        <p id={NOTICE_ID} className="composer-notice">
-          {notice}
-        </p>
+        <Alert id={NOTICE_ID} variant={notice.variant}>
+          {notice.message}
+        </Alert>
       )}
 
       {error && (
-        <p id={ERROR_ID} className="composer-error" role="alert">
+        <Alert id={ERROR_ID} variant="error" role="alert">
           {error}
-        </p>
+        </Alert>
       )}
 
       <form className="composer-form" onSubmit={handleSubmit} aria-busy={isSending}>
@@ -98,9 +107,9 @@ function MessageComposer({
             setError(null)
           }}
         />
-        <button type="submit" disabled={!canSend}>
+        <Button type="submit" disabled={!canSend} isLoading={isSending}>
           {isSending ? 'Enviando…' : 'Enviar'}
-        </button>
+        </Button>
       </form>
 
       {showCounter && (

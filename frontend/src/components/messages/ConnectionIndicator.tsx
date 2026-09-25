@@ -1,10 +1,11 @@
 import type { ChatConnectionStatus } from '../../hooks/useChatConnection'
 
+// Realtime status only; the signed-in user is shown in the sidebar.
 const LABELS: Record<ChatConnectionStatus, string> = {
-  connecting: 'Conectando…',
-  connected: 'Conectado',
-  reconnecting: 'Reconectando…',
-  disconnected: 'Desconectado',
+  connecting: 'Conectando',
+  connected: 'Online',
+  reconnecting: 'Reconectando',
+  disconnected: 'Offline',
 }
 
 interface ConnectionIndicatorProps {

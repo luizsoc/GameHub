@@ -2,19 +2,35 @@ import { useChannelRealtime } from '../../hooks/useChannelRealtime'
 import type { ChatConnectionState } from '../../hooks/useChatConnection'
 import { useMessages } from '../../hooks/useMessages'
 import { sendMessage } from '../../services/chatConnection'
-import MessageComposer from './MessageComposer'
+import { Alert } from '../ui/Alert'
+import { Button } from '../ui/Button'
+import { EmptyState } from '../ui/EmptyState'
+import { IconMessage } from '../ui/icons'
+import { Skeleton } from '../ui/Skeleton'
+import MessageComposer, { type ComposerNotice } from './MessageComposer'
 import MessageList from './MessageList'
 
-function getConnectionNotice({ status, error }: ChatConnectionState): string | null {
+// Author/content widths for the loading placeholder rows.
+const SKELETON_ROWS = [
+  ['96px', '64%'],
+  ['120px', '42%'],
+  ['80px', '78%'],
+  ['104px', '52%'],
+]
+
+function getConnectionNotice({ status, error }: ChatConnectionState): ComposerNotice | null {
   switch (status) {
     case 'connected':
       return null
     case 'connecting':
-      return 'Conectando ao chat…'
+      return { variant: 'info', message: 'Conectando ao chat…' }
     case 'reconnecting':
-      return 'Conexão perdida. Tentando reconectar…'
+      return { variant: 'warning', message: 'Conexão perdida. Tentando reconectar…' }
     case 'disconnected':
-      return `${error ?? 'Desconectado do chat.'} Recarregue a página para tentar novamente.`
+      return {
+        variant: 'error',
+        message: `${error ?? 'Desconectado do chat.'} Recarregue a página para tentar novamente.`,
+      }
   }
 }
 
@@ -44,31 +60,43 @@ function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
   function renderHistory() {
     if (isLoading) {
       return (
-        <p className="channel-status" role="status">
-          Carregando mensagens…
-        </p>
+        <div className="message-skeleton" role="status">
+          <span className="visually-hidden">Carregando mensagens…</span>
+          {SKELETON_ROWS.map(([authorWidth, contentWidth]) => (
+            <div key={authorWidth} className="message-skeleton-row">
+              <Skeleton width={authorWidth} height={12} />
+              <Skeleton width={contentWidth} height={14} />
+            </div>
+          ))}
+        </div>
       )
     }
 
     if (error) {
       return (
-        <div className="channel-status" role="alert">
-          <p className="channel-status-error">{error}</p>
-          <button type="button" className="button-secondary" onClick={reload}>
-            Tentar novamente
-          </button>
+        <div className="channel-status">
+          <Alert
+            variant="error"
+            role="alert"
+            action={
+              <Button variant="secondary" size="sm" onClick={reload}>
+                Tentar novamente
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
         </div>
       )
     }
 
     if (messages.length === 0) {
       return (
-        <div className="channel-empty">
-          <p className="channel-empty-title">
-            Ainda não há mensagens em #{channelName}.
-          </p>
-          <p>Envie a primeira mensagem para começar a conversa.</p>
-        </div>
+        <EmptyState
+          icon={<IconMessage size={20} />}
+          title={`Ainda não há mensagens em #${channelName}.`}
+          description="Envie a primeira mensagem para começar a conversa."
+        />
       )
     }
 

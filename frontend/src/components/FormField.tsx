@@ -1,3 +1,5 @@
+import { IconAlertCircle } from './ui/icons'
+
 interface FormFieldProps {
   id: string
   label: string
@@ -38,6 +40,7 @@ function FormField({
       />
       {error && (
         <p id={errorId} className="field-error">
+          <IconAlertCircle size={14} />
           {error}
         </p>
       )}

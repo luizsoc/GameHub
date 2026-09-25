@@ -1,40 +1,90 @@
+/* ==========================================================================
+   Design tokens — GameHub is dark-only.
+   ========================================================================== */
+
 :root {
-  --bg: #ffffff;
-  --text: #1f2328;
-  --muted: #59636e;
-  --border: #d1d9e0;
-  --accent: #6d28d9;
-  --accent-text: #ffffff;
-  --accent-soft: rgba(109, 40, 217, 0.12);
-  --danger: #c62828;
-  --success: #1a7f37;
-  --warning: #9a6700;
-  --surface: #f6f7f9;
-  --hover: rgba(0, 0, 0, 0.05);
+  color-scheme: dark;
 
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  /* Surfaces: sidebar (deepest) → base (conversation) → raised (controls) */
+  --bg-sidebar: #0b0c11;
+  --bg-base: #14161d;
+  --bg-raised: #1d202a;
+  --bg-hover: rgb(255 255 255 / 0.04);
+  --bg-selected: rgb(109 74 255 / 0.16);
+  --backdrop: rgb(5 6 10 / 0.72);
+
+  /* Borders: subtle = decorative dividers; control = field outlines (≥ 3:1) */
+  --border-subtle: #262a36;
+  --border-control: #636a7d;
+
+  /* Text (all ≥ 4.5:1 on every surface) */
+  --text-primary: #eceef3;
+  --text-secondary: #a9afbd;
+  --text-tertiary: #8a91a0;
+
+  /* Accent: fill for actions, text variant for links/focus/active states */
+  --accent: #6d4aff;
+  --accent-hover: #5e3bf2;
+  --accent-text: #ab99ff;
+  --on-accent: #ffffff;
+
+  /* Status */
+  --success: #34d399;
+  --warning: #f5b83d;
+  --danger: #f47272;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-body: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+
+  /* Spacing (4px scale) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --radius-full: 50%;
+
+  /* Elevation: only for layers that float above the page */
+  --shadow-overlay: 0 20px 40px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--border-subtle);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 32px -16px rgb(0 0 0 / 0.5);
+
+  /* Focus */
+  --focus-ring-color: var(--accent-text);
+  --focus-ring-halo: 0 0 0 3px rgb(171 153 255 / 0.25);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Scrollbar */
+  --scrollbar-thumb: #2e3240;
+  --scrollbar-thumb-hover: #3b4050;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16171d;
-    --text: #e6e6eb;
-    --muted: #9ca3af;
-    --border: #3a3d4a;
-    --accent: #a78bfa;
-    --accent-text: #16171d;
-    --accent-soft: rgba(167, 139, 250, 0.16);
-    --danger: #f87171;
-    --success: #3fb950;
-    --warning: #d29922;
-    --surface: #1d1f27;
-    --hover: rgba(255, 255, 255, 0.06);
-  }
-}
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 *,
 *::before,
@@ -45,224 +95,670 @@
 body {
   margin: 0;
   min-height: 100svh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-button {
-  font: inherit;
-  padding: 0.6rem 1rem;
-  border: 0;
-  border-radius: 6px;
-  background: var(--accent);
-  color: var(--accent-text);
-  cursor: pointer;
+h1,
+h2 {
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.01em;
 }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.button-secondary {
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.button-secondary:hover:not(:disabled) {
-  background: var(--hover);
-}
-
-button:not(.button-secondary, .channel-item):hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Disabled because a request is in flight, not because of invalid input. */
-[aria-busy='true'] button:disabled {
-  cursor: progress;
+::selection {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text-primary);
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-text);
+  text-underline-offset: 2px;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:hover {
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Focus — one visible ring for every keyboard-focusable element
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Scrollbars — thin and dark
+   ========================================================================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--scrollbar-thumb) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* ==========================================================================
+   Reduced motion — keep state changes, drop the movement
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The spinner is the only sign that work is in progress: slow it down
+     instead of stopping it. */
+  .spinner {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+/* Hidden on screen, still read by screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Button — components/ui/Button.tsx
+   ========================================================================== */
+
+/* Native buttons only get the basics; their look comes from .btn or from
+   their own component class (e.g. .channel-item). */
+button {
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  border-color: var(--border-subtle);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--border-control);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* A solid "unavailable" look instead of opacity, which muddies the accent. */
+.btn:disabled {
+  border-color: var(--border-subtle);
+  background: var(--bg-raised);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.btn-ghost:disabled {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Loading is busy, not unavailable: keep the variant's colors. */
+.btn[data-loading] {
+  cursor: progress;
+}
+
+.btn-primary[data-loading] {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-secondary[data-loading] {
+  border-color: var(--border-subtle);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+.btn-icon {
+  width: 40px;
+  padding: 0;
+}
+
+.btn-icon.btn-sm {
+  width: 32px;
+}
+
+.spinner {
+  flex-shrink: 0;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Alert — components/ui/Alert.tsx
+   ========================================================================== */
+
+.alert {
+  --alert-color: var(--accent-text);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--alert-color) 35%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--alert-color) 10%, transparent);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.alert-error {
+  --alert-color: var(--danger);
+}
+
+.alert-warning {
+  --alert-color: var(--warning);
+}
+
+.alert-info {
+  --alert-color: var(--accent-text);
+}
+
+.alert-success {
+  --alert-color: var(--success);
+}
+
+/* 16px icon centred on the first 19.5px text line. */
+.alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--alert-color);
+}
+
+.alert-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.alert-action {
+  margin-top: var(--space-2);
+}
+
+/* ==========================================================================
+   Skeleton — components/ui/Skeleton.tsx
+   ========================================================================== */
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==========================================================================
+   Empty state — components/ui/EmptyState.tsx
+   ========================================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 360px;
+  margin: auto;
+  padding: var(--space-8) var(--space-6);
+  color: var(--text-secondary);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-10);
+  height: var(--space-10);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+}
+
+.empty-state-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
+  font-weight: 600;
+}
+
+.empty-state-description {
+  margin: var(--space-1) 0 0;
+}
+
+.empty-state-action {
+  margin-top: var(--space-4);
 }
 
 .status {
-  padding: 2rem 1rem;
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-secondary);
   text-align: center;
 }
 
-.auth-page {
-  max-width: 24rem;
-  margin: 0 auto;
-  padding: 3rem 1rem;
+/* ==========================================================================
+   Brand — components/ui/Brand.tsx
+   ========================================================================== */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.auth-page form {
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.brand-name {
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   Auth pages — components/layout/AuthLayout.tsx
+   ========================================================================== */
+
+/* Auto margins centre the content when there is room and collapse to zero
+   when there is not, so short screens scroll instead of clipping. */
+.auth-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  min-height: 100svh;
+  padding: var(--space-12) var(--space-4);
 }
+
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  animation: auth-enter var(--duration-base) var(--ease-out);
+}
+
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}
+
+.auth-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.auth-title {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+}
+
+.auth-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.auth-card {
+  padding: var(--space-8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* A little more air above the main action. */
+.auth-card .btn[type='submit'] {
+  margin-top: var(--space-2);
+}
+
+.auth-switch {
+  margin: var(--space-6) 0 0;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* The radius also rounds the focus ring. */
+.auth-switch a {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Form fields
+   ========================================================================== */
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-2);
+}
+
+.field label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
 }
 
 .field input,
 .field textarea {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  color: var(--text-primary);
   font: inherit;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* Same height as buttons. */
+.field input {
+  min-height: 40px;
 }
 
 .field textarea {
   resize: vertical;
 }
 
-.field input[aria-invalid='true'] {
+::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
+/* Fields show focus with their own border plus a soft halo. */
+.field input:focus-visible,
+.field textarea:focus-visible,
+.composer-input:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring-color);
+  box-shadow: var(--focus-ring-halo);
+}
+
+/* Invalid fields keep the danger color, also while focused. */
+.field input[aria-invalid='true'],
+.field input[aria-invalid='true']:focus-visible {
   border-color: var(--danger);
 }
 
-.field-error,
-.form-error {
+.field input[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent);
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   margin: 0;
   color: var(--danger);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
-.form-error {
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--danger);
-  border-radius: 6px;
-}
-
-.form-notice {
-  margin: 0;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--warning);
-  border-radius: 6px;
-  font-size: 0.9rem;
+.field-error svg {
+  flex-shrink: 0;
 }
 
 .optional {
-  color: var(--muted);
-  font-weight: normal;
+  color: var(--text-tertiary);
+  font-weight: 400;
 }
 
-/* Main layout */
+/* ==========================================================================
+   Main layout
+   ========================================================================== */
 
+/* Sidebar + conversation, both full height. No global header. */
 .app-shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-  grid-template-areas:
-    'header header'
-    'sidebar main';
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'sidebar main';
   height: 100svh;
 }
 
-.app-header {
-  grid-area: header;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.app-title {
-  flex-shrink: 0;
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.user-menu strong {
-  color: var(--text);
-}
-
-.user-menu button {
-  flex-shrink: 0;
-  padding: 0.4rem 0.8rem;
-}
-
-/* Usernames go up to 50 characters: truncate instead of overflowing. */
-.user-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Channel sidebar */
+/* ==========================================================================
+   Channel sidebar
+   ========================================================================== */
 
 .sidebar {
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  margin: 0;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: inherit;
+  line-height: 1;
+}
+
+.sidebar-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .sidebar-header {
-  padding: 1rem 1rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-2) var(--space-2) var(--space-4);
 }
 
 .sidebar-header h2 {
   margin: 0;
-  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted);
 }
 
 .sidebar-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
 }
 
 .sidebar-message {
   margin: 0;
-  padding: 0.5rem;
-  color: var(--muted);
+  padding: var(--space-2);
+  color: var(--text-secondary);
 }
 
-.sidebar-error {
-  margin: 0 0 0.5rem;
-  color: var(--danger);
+/* Session block: avatar, name and logout. */
+.user-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 
-.sidebar-footer {
-  padding: 0.75rem;
-  border-top: 1px solid var(--border);
+/* Usernames go up to 50 characters: truncate instead of overflowing. */
+.user-panel-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sidebar-footer button {
-  width: 100%;
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--bg-selected);
+  color: var(--accent-text);
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Same row height as .channel-item, so nothing shifts when names arrive. */
+.channel-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.channel-skeleton-item {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-2);
 }
 
 .channel-list {
@@ -275,29 +771,56 @@ a {
 }
 
 .channel-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-2);
   width: 100%;
-  padding: 0.45rem 0.6rem;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--muted);
+  color: var(--text-secondary);
+  font-weight: 500;
   text-align: left;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
-.channel-item:hover {
-  background: var(--hover);
-  color: var(--text);
+/* Inset: the list scrolls, so an outer ring would be clipped at its edges. */
+.channel-item:focus-visible {
+  outline-offset: -2px;
 }
 
-.channel-item[aria-current='true'] {
-  background: var(--accent-soft);
-  color: var(--text);
+.channel-item:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Stays highlighted on hover too (the hover rule above is more specific). */
+.channel-item[aria-current='true'],
+.channel-item[aria-current='true']:hover:not(:disabled) {
+  background: var(--bg-selected);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
+/* Selected marker: a 2px bar on the left edge. */
+.channel-item[aria-current='true']::before {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-text);
+  content: '';
+}
+
 .channel-hash {
-  color: var(--muted);
+  color: var(--text-tertiary);
 }
 
 .channel-name {
@@ -306,26 +829,25 @@ a {
   white-space: nowrap;
 }
 
-/* Channel area */
+/* ==========================================================================
+   Channel area
+   ========================================================================== */
 
 .channel-area {
   grid-area: main;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  background: var(--bg-base);
 }
 
 .channel-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.5rem 2rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.channel-heading {
-  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: var(--space-2) var(--space-8);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .channel-body {
@@ -335,65 +857,78 @@ a {
   min-height: 0;
 }
 
-.channel-header h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.4rem;
-  overflow-wrap: anywhere;
+/* Name keeps its width until space runs out, then truncates. */
+.channel-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.channel-title .channel-hash {
+  margin-right: var(--space-1);
+}
+
+/* Takes the remaining space and truncates first. */
 .channel-description {
+  flex: 1 1 0;
+  min-width: 0;
   margin: 0;
-  color: var(--muted);
-  overflow-wrap: anywhere;
+  padding-left: var(--space-3);
+  overflow: hidden;
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .channel-status {
   margin: 0;
-  padding: 1.5rem 2rem;
-  color: var(--muted);
+  padding: var(--space-6) var(--space-8);
+  color: var(--text-secondary);
 }
 
-.channel-status-error {
-  margin: 0 0 0.75rem;
-  color: var(--danger);
+
+/* ==========================================================================
+   Messages
+   ========================================================================== */
+
+/* Same padding as .message-scroll, so the history replaces it in place. */
+.message-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-8) var(--space-6);
 }
 
-.channel-empty {
-  margin: auto;
-  padding: 2rem 1.5rem;
-  color: var(--muted);
-  text-align: center;
-  overflow-wrap: anywhere;
+.message-skeleton-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
-
-.channel-empty p {
-  margin: 0;
-}
-
-.channel-empty-title {
-  margin-bottom: 0.25rem;
-  color: var(--text);
-  font-weight: 600;
-}
-
-/* Messages */
 
 .message-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 1rem 2rem 1.5rem;
+  padding: var(--space-4) var(--space-8) var(--space-6);
 }
 
+/* Inset so the ring is not clipped by the surrounding layout. */
 .message-scroll:focus-visible {
-  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -403,7 +938,7 @@ a {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 0.5rem;
+  gap: 0 var(--space-2);
 }
 
 .message-author {
@@ -412,34 +947,43 @@ a {
 }
 
 .message-time {
-  color: var(--muted);
-  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .message-content {
-  margin: 0.15rem 0 0;
+  margin: 2px 0 0;
+  font-size: var(--font-size-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-/* Connection indicator */
+/* ==========================================================================
+   Connection indicator
+   ========================================================================== */
 
 .connection-indicator {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.35rem;
-  color: var(--muted);
-  font-size: 0.8rem;
+  gap: 6px;
+  margin-left: auto;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .connection-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--muted);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--text-tertiary);
+  transition: background-color var(--duration-base) var(--ease-out);
 }
 
 .connection-connected .connection-dot {
@@ -455,17 +999,19 @@ a {
   background: var(--danger);
 }
 
-/* Composer */
+/* ==========================================================================
+   Composer
+   ========================================================================== */
 
 .composer {
-  padding: 0.75rem 2rem 1rem;
-  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-8) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .composer-form {
   display: flex;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 /* One line by default; grows with Shift+Enter line breaks where the browser
@@ -473,102 +1019,122 @@ a {
 .composer-input {
   flex: 1;
   min-width: 0;
-  max-height: 10rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
+  max-height: 160px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  color: var(--text-primary);
   font: inherit;
-  line-height: 1.5;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
   resize: none;
   field-sizing: content;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .composer-counter {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
+  margin: var(--space-1) 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.composer-notice,
-.composer-error {
-  margin: 0 0 0.5rem;
-  font-size: 0.85rem;
+/* Compact alerts above the input. */
+.composer .alert {
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
 }
 
-.composer-notice {
-  color: var(--muted);
-}
-
-.composer-error {
-  color: var(--danger);
-}
-
-/* Modal */
+/* ==========================================================================
+   Modal
+   ========================================================================== */
 
 .modal {
-  width: min(28rem, calc(100% - 2rem));
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg);
-  color: var(--text);
+  width: min(480px, calc(100% - var(--space-8)));
+  padding: var(--space-6);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-overlay);
+  color: var(--text-primary);
 }
 
 .modal::backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--backdrop);
 }
 
 .modal form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .modal h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+}
+
+/* Fields sit on a raised surface (modal, auth card): step them back to the
+   page tone so they read as inputs, not as part of the surface. */
+.modal .field input,
+.modal .field textarea,
+.auth-card .field input {
+  background: var(--bg-base);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
+/* ==========================================================================
+   Small screens
+   ========================================================================== */
+
 @media (max-width: 720px) {
+  .auth-page {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .auth-card {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  /* Interim stacked layout until the mobile drawer (Phase 8). The old header
+     row is gone, so the sidebar (brand, channels, user) gets its height. */
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      'header'
       'sidebar'
       'main';
   }
 
-  /* The channel list scrolls; keep most of the height for the chat itself. */
   .sidebar {
-    max-height: 30svh;
+    max-height: 40svh;
     border-right: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .channel-header {
-    padding: 1rem 1rem 0.75rem;
+    padding: var(--space-2) var(--space-4);
   }
 
   .channel-status,
-  .message-scroll {
-    padding-inline: 1rem;
+  .message-scroll,
+  .message-skeleton {
+    padding-inline: var(--space-4);
   }
 
   .composer {
-    padding: 0.5rem 1rem 0.75rem;
+    padding: var(--space-2) var(--space-4) var(--space-3);
   }
 
-  .user-label {
-    display: none;
-  }
 }

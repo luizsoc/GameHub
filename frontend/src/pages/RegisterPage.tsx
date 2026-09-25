@@ -8,6 +8,9 @@ import {
   validateUsername,
 } from '../auth/validation'
 import FormField from '../components/FormField'
+import AuthLayout from '../components/layout/AuthLayout'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
 
 interface RegisterErrors {
   username?: string
@@ -62,14 +65,20 @@ function RegisterPage() {
   }
 
   return (
-    <main className="auth-page">
-      <h1>Criar conta</h1>
-
+    <AuthLayout
+      title="Criar sua conta"
+      subtitle="Entre na comunidade GameHub."
+      footer={
+        <>
+          Já possui uma conta? <Link to="/login">Entrar</Link>
+        </>
+      }
+    >
       <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting}>
         {formError && (
-          <p className="form-error" role="alert">
+          <Alert variant="error" role="alert">
             {formError}
-          </p>
+          </Alert>
         )}
 
         <FormField
@@ -102,15 +111,11 @@ function RegisterPage() {
           error={fieldErrors.password}
         />
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Cadastrando…' : 'Cadastrar'}
-        </button>
+        <Button type="submit" isLoading={isSubmitting}>
+          {isSubmitting ? 'Criando…' : 'Criar conta'}
+        </Button>
       </form>
-
-      <p>
-        Já tem conta? <Link to="/login">Entrar</Link>
-      </p>
-    </main>
+    </AuthLayout>
   )
 }
 

@@ -7,6 +7,8 @@ import ChannelSidebar from '../channels/ChannelSidebar'
 import CreateChannelModal from '../channels/CreateChannelModal'
 import ConnectionIndicator from '../messages/ConnectionIndicator'
 import MessagePanel from '../messages/MessagePanel'
+import { EmptyState } from '../ui/EmptyState'
+import { IconHash } from '../ui/icons'
 
 function MainLayout() {
   const { user, logout } = useAuth()
@@ -35,17 +37,19 @@ function MainLayout() {
       return (
         <>
           <header className="channel-header">
-            <div className="channel-heading">
-              <h2>
-                <span className="channel-hash" aria-hidden="true">
-                  #{' '}
-                </span>
-                {selectedChannel.name}
-              </h2>
-              <p className="channel-description">
-                {selectedChannel.description || 'Sem descrição.'}
+            <h2 className="channel-title" title={selectedChannel.name}>
+              <span className="channel-hash" aria-hidden="true">
+                #
+              </span>
+              {selectedChannel.name}
+            </h2>
+
+            {/* No placeholder when the channel has no description. */}
+            {selectedChannel.description && (
+              <p className="channel-description" title={selectedChannel.description}>
+                {selectedChannel.description}
               </p>
-            </div>
+            )}
 
             <ConnectionIndicator status={chat.status} />
           </header>
@@ -61,10 +65,11 @@ function MainLayout() {
 
     if (!isLoading && !error) {
       return (
-        <div className="channel-empty">
-          <p className="channel-empty-title">Nenhum canal por aqui ainda.</p>
-          <p>Use “Criar canal” para abrir o primeiro e começar a conversar.</p>
-        </div>
+        <EmptyState
+          icon={<IconHash size={20} />}
+          title="Nenhum canal por aqui ainda."
+          description="Use “Criar canal” para abrir o primeiro e começar a conversar."
+        />
       )
     }
 
@@ -73,20 +78,6 @@ function MainLayout() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <h1 className="app-title">GameHub</h1>
-
-        <div className="user-menu">
-          <span className="user-name" title={user?.username}>
-            <span className="user-label">Conectado como </span>
-            <strong>{user?.username}</strong>
-          </span>
-          <button type="button" className="button-secondary" onClick={logout}>
-            Sair
-          </button>
-        </div>
-      </header>
-
       <ChannelSidebar
         channels={channels}
         isLoading={isLoading}
@@ -95,6 +86,8 @@ function MainLayout() {
         onSelect={setSelectedChannelId}
         onRetry={reload}
         onCreateClick={() => setIsCreateOpen(true)}
+        username={user?.username ?? ''}
+        onLogout={logout}
       />
 
       <main className="channel-area">{renderChannelArea()}</main>

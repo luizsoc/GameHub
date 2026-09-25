@@ -3,6 +3,8 @@ import * as channelsApi from '../../api/channels'
 import { getErrorMessage } from '../../api/errors'
 import type { ChannelResponse } from '../../types/channel'
 import FormField from '../FormField'
+import { Alert } from '../ui/Alert'
+import { Button } from '../ui/Button'
 
 // Column limits from GameHubDbContext (Channel.Name / Channel.Description).
 const NAME_MAX_LENGTH = 100
@@ -87,9 +89,9 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
         <h2 id="create-channel-title">Criar canal</h2>
 
         {formError && (
-          <p className="form-error" role="alert">
+          <Alert variant="error" role="alert">
             {formError}
-          </p>
+          </Alert>
         )}
 
         <FormField
@@ -118,17 +120,12 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
         </div>
 
         <div className="modal-actions">
-          <button
-            type="button"
-            className="button-secondary"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
+          <Button variant="secondary" onClick={handleCancel} disabled={isSubmitting}>
             Cancelar
-          </button>
-          <button type="submit" disabled={isSubmitting}>
+          </Button>
+          <Button type="submit" isLoading={isSubmitting}>
             {isSubmitting ? 'Criando…' : 'Criar canal'}
-          </button>
+          </Button>
         </div>
       </form>
     </dialog>

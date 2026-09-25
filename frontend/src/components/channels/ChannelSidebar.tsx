@@ -1,5 +1,14 @@
 import type { ChannelResponse } from '../../types/channel'
+import UserPanel from '../layout/UserPanel'
+import { Alert } from '../ui/Alert'
+import { Brand } from '../ui/Brand'
+import { Button, IconButton } from '../ui/Button'
+import { IconPlus } from '../ui/icons'
+import { Skeleton } from '../ui/Skeleton'
 import ChannelList from './ChannelList'
+
+// Varied widths so the placeholder reads as a list of names.
+const SKELETON_WIDTHS = ['72%', '58%', '84%', '64%', '48%']
 
 interface ChannelSidebarProps {
   channels: ChannelResponse[]
@@ -9,6 +18,8 @@ interface ChannelSidebarProps {
   onSelect: (channelId: string) => void
   onRetry: () => void
   onCreateClick: () => void
+  username: string
+  onLogout: () => void
 }
 
 function ChannelSidebar({
@@ -19,23 +30,37 @@ function ChannelSidebar({
   onSelect,
   onRetry,
   onCreateClick,
+  username,
+  onLogout,
 }: ChannelSidebarProps) {
   function renderContent() {
     if (isLoading) {
       return (
-        <p className="sidebar-message" role="status">
-          Carregando canais…
-        </p>
+        <div className="channel-skeleton" role="status">
+          <span className="visually-hidden">Carregando canais…</span>
+          {SKELETON_WIDTHS.map((width) => (
+            <div key={width} className="channel-skeleton-item">
+              <Skeleton width={width} height={12} />
+            </div>
+          ))}
+        </div>
       )
     }
 
     if (error) {
       return (
-        <div className="sidebar-message" role="alert">
-          <p className="sidebar-error">{error}</p>
-          <button type="button" className="button-secondary" onClick={onRetry}>
-            Tentar novamente
-          </button>
+        <div className="sidebar-message">
+          <Alert
+            variant="error"
+            role="alert"
+            action={
+              <Button variant="secondary" size="sm" onClick={onRetry}>
+                Tentar novamente
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
         </div>
       )
     }
@@ -54,18 +79,27 @@ function ChannelSidebar({
   }
 
   return (
-    <aside className="sidebar" aria-labelledby="channels-heading">
-      <div className="sidebar-header">
-        <h2 id="channels-heading">Canais</h2>
-      </div>
+    <aside className="sidebar">
+      {/* The page's only <h1>: the brand. */}
+      <h1 className="sidebar-brand">
+        <Brand />
+      </h1>
 
-      <div className="sidebar-body">{renderContent()}</div>
+      <section className="sidebar-section" aria-labelledby="channels-heading">
+        <div className="sidebar-header">
+          <h2 id="channels-heading">Canais</h2>
+          <IconButton
+            label="Criar canal"
+            icon={<IconPlus />}
+            size="sm"
+            onClick={onCreateClick}
+          />
+        </div>
 
-      <div className="sidebar-footer">
-        <button type="button" onClick={onCreateClick}>
-          <span aria-hidden="true">+ </span>Criar canal
-        </button>
-      </div>
+        <div className="sidebar-body">{renderContent()}</div>
+      </section>
+
+      <UserPanel username={username} onLogout={onLogout} />
     </aside>
   )
 }

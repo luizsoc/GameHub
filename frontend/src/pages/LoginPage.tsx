@@ -4,6 +4,9 @@ import { getErrorMessage } from '../api/errors'
 import { useAuth } from '../auth/useAuth'
 import { validateEmail, validatePassword } from '../auth/validation'
 import FormField from '../components/FormField'
+import AuthLayout from '../components/layout/AuthLayout'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
 
 interface LoginErrors {
   email?: string
@@ -53,20 +56,26 @@ function LoginPage() {
   }
 
   return (
-    <main className="auth-page">
-      <h1>Entrar no GameHub</h1>
-
+    <AuthLayout
+      title="Entrar no GameHub"
+      subtitle="Entre para continuar conversando."
+      footer={
+        <>
+          Ainda não tem uma conta? <Link to="/register">Criar conta</Link>
+        </>
+      }
+    >
       <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting}>
         {sessionExpired && !formError && (
-          <p className="form-notice" role="status">
+          <Alert variant="warning" role="status">
             Sua sessão expirou. Entre novamente para continuar.
-          </p>
+          </Alert>
         )}
 
         {formError && (
-          <p className="form-error" role="alert">
+          <Alert variant="error" role="alert">
             {formError}
-          </p>
+          </Alert>
         )}
 
         <FormField
@@ -89,15 +98,11 @@ function LoginPage() {
           error={fieldErrors.password}
         />
 
-        <button type="submit" disabled={isSubmitting}>
+        <Button type="submit" isLoading={isSubmitting}>
           {isSubmitting ? 'Entrando…' : 'Entrar'}
-        </button>
+        </Button>
       </form>
-
-      <p>
-        Não tem conta? <Link to="/register">Cadastre-se</Link>
-      </p>
-    </main>
+    </AuthLayout>
   )
 }
 
