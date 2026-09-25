@@ -64,8 +64,11 @@ function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
           <span className="visually-hidden">Carregando mensagens…</span>
           {SKELETON_ROWS.map(([authorWidth, contentWidth]) => (
             <div key={authorWidth} className="message-skeleton-row">
-              <Skeleton width={authorWidth} height={12} />
-              <Skeleton width={contentWidth} height={14} />
+              <Skeleton width={40} height={40} className="skeleton-avatar" />
+              <div className="message-skeleton-lines">
+                <Skeleton width={authorWidth} height={12} />
+                <Skeleton width={contentWidth} height={14} />
+              </div>
             </div>
           ))}
         </div>

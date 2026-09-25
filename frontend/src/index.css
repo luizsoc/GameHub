@@ -899,25 +899,41 @@ button {
    Messages
    ========================================================================== */
 
-/* Same padding as .message-scroll, so the history replaces it in place. */
+/* Same padding and columns as the message rows, so the history replaces it
+   in place. */
 .message-skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   padding: var(--space-4) var(--space-8) var(--space-6);
 }
 
 .message-skeleton-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
+.message-skeleton-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-top: var(--space-1);
+}
+
+.skeleton-avatar {
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+}
+
+/* The rows carry the side padding, so the hover tint spans the full width. */
 .message-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-4) var(--space-8) var(--space-6);
+  padding: var(--space-4) 0 var(--space-6);
 }
 
 /* Inset so the ring is not clipped by the surrounding layout. */
@@ -926,37 +942,121 @@ button {
 }
 
 .message-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.message-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-2);
+/* Avatar column + text. Follow-ups keep the same columns, so every line of a
+   group starts at the same edge. */
+.message {
+  display: grid;
+  grid-template-columns: var(--space-10) minmax(0, 1fr);
+  column-gap: var(--space-3);
+  padding: var(--space-1) var(--space-8);
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
+/* Space between groups, not between the lines of one group. */
+.message-group-start {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.message-list > :first-child,
+.message-day + .message-group-start {
+  margin-top: 0;
+}
+
+.message-main {
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Usernames go up to 50 characters: truncate, the tooltip has the full name. */
 .message-author {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-author-own {
+  color: var(--accent-text);
 }
 
 .message-time {
+  flex-shrink: 0;
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
 }
 
 .message-content {
-  margin: 2px 0 0;
+  margin: 0;
+  color: var(--text-primary);
   font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* Follow-ups show their time in the avatar column, on hover only. Same line
+   box as the text, so it sits on the first line. */
+.message-hover-time {
+  align-self: start;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: calc(var(--font-size-body) * var(--line-height-normal));
+  text-align: center;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+/* Only where hover exists: a tap on touch screens would leave it stuck. */
+@media (hover: hover) {
+  .message:hover {
+    background: var(--bg-hover);
+  }
+
+  .message:hover .message-hover-time {
+    opacity: 1;
+  }
+}
+
+/* Day divider: a hairline with the day in the middle. */
+.message-day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-2);
+  padding: 0 var(--space-8);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.message-day::before,
+.message-day::after {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+  content: '';
+}
+
+.message-day-label {
+  min-width: 0;
+  text-align: center;
 }
 
 /* ==========================================================================
@@ -1128,8 +1228,9 @@ button {
   }
 
   .channel-status,
-  .message-scroll,
-  .message-skeleton {
+  .message-skeleton,
+  .message,
+  .message-day {
     padding-inline: var(--space-4);
   }
 
