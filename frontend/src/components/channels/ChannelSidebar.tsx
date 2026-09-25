@@ -1,9 +1,10 @@
+import { useEffect, useRef } from 'react'
 import type { ChannelResponse } from '../../types/channel'
 import UserPanel from '../layout/UserPanel'
 import { Alert } from '../ui/Alert'
 import { Brand } from '../ui/Brand'
 import { Button, IconButton } from '../ui/Button'
-import { IconPlus } from '../ui/icons'
+import { IconPlus, IconX } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import ChannelList from './ChannelList'
 
@@ -20,6 +21,9 @@ interface ChannelSidebarProps {
   onCreateClick: () => void
   username: string
   onLogout: () => void
+  // Mobile drawer (below 768px); the desktop sidebar ignores both.
+  isDrawerOpen: boolean
+  onCloseDrawer: () => void
 }
 
 function ChannelSidebar({
@@ -32,7 +36,18 @@ function ChannelSidebar({
   onCreateClick,
   username,
   onLogout,
+  isDrawerOpen,
+  onCloseDrawer,
 }: ChannelSidebarProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Opening the drawer moves focus into it.
+  useEffect(() => {
+    if (isDrawerOpen) {
+      closeButtonRef.current?.focus()
+    }
+  }, [isDrawerOpen])
+
   function renderContent() {
     if (isLoading) {
       return (
@@ -79,11 +94,21 @@ function ChannelSidebar({
   }
 
   return (
-    <aside className="sidebar">
-      {/* The page's only <h1>: the brand. */}
+    <aside id="app-sidebar" className="sidebar">
+      {/* The page's <h1>: the brand (the mobile top bar has its own while
+          this sidebar is a closed drawer). */}
       <h1 className="sidebar-brand">
         <Brand />
       </h1>
+
+      {/* Drawer only; hidden on desktop. */}
+      <IconButton
+        ref={closeButtonRef}
+        label="Fechar menu"
+        icon={<IconX size={20} />}
+        className="drawer-close"
+        onClick={onCloseDrawer}
+      />
 
       <section className="sidebar-section" aria-labelledby="channels-heading">
         <div className="sidebar-header">

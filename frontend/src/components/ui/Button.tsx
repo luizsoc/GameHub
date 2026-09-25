@@ -1,10 +1,11 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ComponentPropsWithRef, ReactNode } from 'react'
 import { Spinner } from './icons'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 export type ButtonSize = 'sm' | 'md'
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+// With ref: React 19 passes it through ...rest to the <button>.
+export interface ButtonProps extends ComponentPropsWithRef<'button'> {
   variant?: ButtonVariant
   // sm = 32px, md = 40px
   size?: ButtonSize
