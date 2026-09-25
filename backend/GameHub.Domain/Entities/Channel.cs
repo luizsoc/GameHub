@@ -2,6 +2,10 @@ namespace GameHub.Domain.Entities;
 
 public class Channel
 {
+    // Column limits (GameHubDbContext), also enforced by ChannelService.
+    public const int NameMaxLength = 100;
+    public const int DescriptionMaxLength = 500;
+
     public Guid Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

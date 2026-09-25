@@ -319,4 +319,28 @@ public class AuthServiceTests
             .ThrowAsync<ArgumentException>()
             .WithMessage("Password is required.");
     }
+
+    [Fact]
+    public async Task RegisterAsync_ShouldThrow_WhenUsernameIsTooLong()
+    {
+        // Arrange
+        var request = new RegisterUserRequest
+        {
+            Username = new string('a', User.UsernameMaxLength + 1),
+            Email = "test@example.com",
+            Password = "Password123!"
+        };
+
+        // Act
+        var act = () => _authService.RegisterAsync(request);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<ArgumentException>()
+            .WithMessage($"Username must be at most {User.UsernameMaxLength} characters.");
+
+        _userRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<User>()),
+            Times.Never);
+    }
 }

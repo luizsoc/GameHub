@@ -2,6 +2,9 @@ namespace GameHub.Domain.Entities;
 
 public class Message
 {
+    // Column limit (GameHubDbContext), also enforced by MessageService.
+    public const int ContentMaxLength = 2000;
+
     public Guid Id { get; set; }
 
     public string Content { get; set; } = string.Empty;

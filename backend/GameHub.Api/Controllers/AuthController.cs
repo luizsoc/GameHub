@@ -1,13 +1,18 @@
 using GameHub.Application.DTOs.Users;
 using GameHub.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GameHub.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicy)]
 public class AuthController : ControllerBase
 {
+    // Per-IP limit for login and registration (configured in Program.cs).
+    public const string RateLimitPolicy = "auth";
+
     private readonly IAuthService _authService;
 
     public AuthController(IAuthService authService)

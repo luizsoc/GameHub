@@ -258,4 +258,28 @@ public class MessageServiceTests
             .ThrowAsync<ArgumentException>()
             .WithMessage("ChannelId is required.");
     }
+
+    [Fact]
+    public async Task SendAsync_ShouldThrow_WhenContentIsTooLong()
+    {
+        var request = new SendMessageRequest
+        {
+            ChannelId = Guid.NewGuid(),
+            Content = new string('a', Message.ContentMaxLength + 1)
+        };
+
+        var service = CreateService();
+
+        var act = () => service.SendAsync(
+            Guid.NewGuid(),
+            request);
+
+        await act.Should()
+            .ThrowAsync<ArgumentException>()
+            .WithMessage($"Message content must be at most {Message.ContentMaxLength} characters.");
+
+        _messageRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Message>()),
+            Times.Never);
+    }
 }

@@ -2,6 +2,10 @@ namespace GameHub.Domain.Entities;
 
 public class User
 {
+    // Column limits (GameHubDbContext), also enforced by AuthService.
+    public const int UsernameMaxLength = 50;
+    public const int EmailMaxLength = 255;
+
     public Guid Id { get; set; }
 
     public string Username { get; set; } = string.Empty;

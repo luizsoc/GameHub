@@ -26,6 +26,20 @@ public class ChannelService : IChannelService
         }
 
         var name = request.Name.Trim();
+        var description = request.Description?.Trim();
+
+        // Checked here so an oversized value is a 400, not a database error.
+        if (name.Length > Channel.NameMaxLength)
+        {
+            throw new ArgumentException(
+                $"Channel name must be at most {Channel.NameMaxLength} characters.");
+        }
+
+        if (description?.Length > Channel.DescriptionMaxLength)
+        {
+            throw new ArgumentException(
+                $"Channel description must be at most {Channel.DescriptionMaxLength} characters.");
+        }
 
         if (await _channelRepository.ExistsByNameAsync(name))
         {
@@ -37,7 +51,7 @@ public class ChannelService : IChannelService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Description = request.Description?.Trim()
+            Description = description
         };
 
         await _channelRepository.AddAsync(channel);

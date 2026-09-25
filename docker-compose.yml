@@ -7,6 +7,9 @@
 # after it succeeds. For the backend outside Docker (dotnet run), start just
 # the database: docker compose up -d postgres
 #
+# Production: add docker-compose.prod.yml, which requires every secret and
+# host value instead of these development defaults.
+#
 # The database credentials are development values (they match
 # backend/GameHub.Api/appsettings.Development.json) and must never be reused
 # in production, where the connection string comes from
@@ -20,6 +23,11 @@ x-backend: &backend
     ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=gamehub;Username=gamehub;Password=${POSTGRES_PASSWORD:-gamehub_dev_password}"
     # From .env. If it is missing, the backend refuses to start and says so.
     Jwt__Key: ${JWT_KEY:-}
+    # Not secrets. Local defaults; production sets its own values
+    # (docker-compose.prod.yml requires them).
+    Jwt__Issuer: ${JWT_ISSUER:-gamehub-local}
+    Jwt__Audience: ${JWT_AUDIENCE:-gamehub-local}
+    AllowedHosts: ${ALLOWED_HOSTS:-localhost}
   depends_on:
     postgres:
       condition: service_healthy
@@ -63,6 +71,15 @@ services:
     ports:
       # Same port as `dotnet run`, so the Vite dev proxy works unchanged.
       - "127.0.0.1:5116:8080"
+    healthcheck:
+      # Readiness (API + database), anonymous. The runtime image has no
+      # curl/wget, so bash sends the request over /dev/tcp. The Host header
+      # must be in AllowedHosts.
+      test: ["CMD", "bash", "-c", 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && head -n 1 <&3 | grep -q " 200 "']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
 volumes:
   gamehub_postgres_data:

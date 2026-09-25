@@ -21,12 +21,15 @@ RUN dotnet tool install --global dotnet-ef --version 10.0.12
 ENV PATH="${PATH}:/root/.dotnet/tools"
 
 # Building the bundle runs Program.cs, whose startup checks require a
-# connection string and a JWT key. These placeholders only satisfy those
-# checks for this command: nothing connects to a database or signs a token,
-# and they are not kept in the image. At runtime the bundle and the API read
-# the real values from the environment (docker-compose.yml / .env).
+# connection string, JWT settings and AllowedHosts. These placeholders only
+# satisfy those checks for this command: nothing connects to a database or
+# signs a token, and they are not kept in the image. At runtime the bundle and
+# the API read the real values from the environment (docker-compose.yml / .env).
 RUN ConnectionStrings__DefaultConnection="Host=design-time-only" \
     Jwt__Key="design-time-placeholder-not-a-secret-000000" \
+    Jwt__Issuer="design-time-only" \
+    Jwt__Audience="design-time-only" \
+    AllowedHosts="localhost" \
     dotnet ef migrations bundle \
     --project GameHub.Infrastructure \
     --startup-project GameHub.Api \

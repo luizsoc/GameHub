@@ -44,6 +44,19 @@ public class AuthService : IAuthService
         var username = request.Username.Trim();
         var email = request.Email.Trim().ToLowerInvariant();
 
+        // Checked here so an oversized value is a 400, not a database error.
+        if (username.Length > User.UsernameMaxLength)
+        {
+            throw new ArgumentException(
+                $"Username must be at most {User.UsernameMaxLength} characters.");
+        }
+
+        if (email.Length > User.EmailMaxLength)
+        {
+            throw new ArgumentException(
+                $"Email must be at most {User.EmailMaxLength} characters.");
+        }
+
         if (await _userRepository.GetByUsernameAsync(username) is not null)
         {
             throw new InvalidOperationException(

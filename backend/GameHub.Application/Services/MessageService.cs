@@ -39,6 +39,16 @@ public class MessageService : IMessageService
                 "ChannelId is required.");
         }
 
+        var content = request.Content.Trim();
+
+        // Checked here so an oversized message is rejected (400 over REST,
+        // an error on the hub call), not a database error.
+        if (content.Length > Message.ContentMaxLength)
+        {
+            throw new ArgumentException(
+                $"Message content must be at most {Message.ContentMaxLength} characters.");
+        }
+
         var channel = await _channelRepository
             .GetByIdAsync(request.ChannelId);
 
@@ -59,7 +69,7 @@ public class MessageService : IMessageService
         var message = new Message
         {
             Id = Guid.NewGuid(),
-            Content = request.Content.Trim(),
+            Content = content,
             UserId = userId,
             ChannelId = request.ChannelId
         };

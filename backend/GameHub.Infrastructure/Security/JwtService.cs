@@ -41,7 +41,11 @@ public class JwtService : IJwtService
             key,
             SecurityAlgorithms.HmacSha256);
 
+        // Issuer and audience come from configuration (Jwt:Issuer,
+        // Jwt:Audience); Program.cs requires both and validates them.
         var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: credentials);

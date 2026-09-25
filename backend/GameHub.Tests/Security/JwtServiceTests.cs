@@ -77,4 +77,36 @@ public class JwtServiceTests
             .Throw<InvalidOperationException>()
             .WithMessage("JWT key is not configured.");
     }
+
+    [Fact]
+    public void GenerateToken_ShouldIncludeIssuerAndAudience_WhenConfigured()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:Key"] = "GameHub-development-secret-key-change-this",
+                ["Jwt:Issuer"] = "gamehub-test",
+                ["Jwt:Audience"] = "gamehub-test-clients"
+            })
+            .Build();
+
+        var jwtService = new JwtService(configuration);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "testuser",
+            Email = "test@example.com"
+        };
+
+        // Act
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(
+            jwtService.GenerateToken(user));
+
+        // Assert
+        jwt.Issuer.Should().Be("gamehub-test");
+        jwt.Audiences.Should().ContainSingle()
+            .Which.Should().Be("gamehub-test-clients");
+    }
 }

@@ -151,4 +151,49 @@ public class ChannelServiceTests
         // Assert
         result.Should().BeNull();
     }
+
+    [Fact]
+    public async Task CreateAsync_ShouldThrow_WhenNameIsTooLong()
+    {
+        // Arrange
+        var request = new CreateChannelRequest
+        {
+            Name = new string('a', Channel.NameMaxLength + 1)
+        };
+
+        // Act
+        var action = async () => await _service.CreateAsync(request);
+
+        // Assert
+        await action.Should()
+            .ThrowAsync<ArgumentException>()
+            .WithMessage($"Channel name must be at most {Channel.NameMaxLength} characters.");
+
+        _channelRepository.Verify(
+            x => x.AddAsync(It.IsAny<Channel>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldThrow_WhenDescriptionIsTooLong()
+    {
+        // Arrange
+        var request = new CreateChannelRequest
+        {
+            Name = "general",
+            Description = new string('a', Channel.DescriptionMaxLength + 1)
+        };
+
+        // Act
+        var action = async () => await _service.CreateAsync(request);
+
+        // Assert
+        await action.Should()
+            .ThrowAsync<ArgumentException>()
+            .WithMessage($"Channel description must be at most {Channel.DescriptionMaxLength} characters.");
+
+        _channelRepository.Verify(
+            x => x.AddAsync(It.IsAny<Channel>()),
+            Times.Never);
+    }
 }

@@ -11,6 +11,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using GameHub.Api.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using System.Net;
+using System.Threading.RateLimiting;
+using GameHub.Api.Controllers;
+using GameHub.Api.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +46,49 @@ if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32
         "or the Jwt__Key environment variable.");
 }
 
+// Issuer and audience are validated on every token. Development has its own
+// values in appsettings.Development.json; elsewhere they come from
+// Jwt__Issuer / Jwt__Audience. They are not secrets.
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
+{
+    throw new InvalidOperationException(
+        "Jwt:Issuer and Jwt:Audience must be configured. " +
+        "Use the Jwt__Issuer and Jwt__Audience environment variables.");
+}
+
+// Host header allow-list. "*" is only accepted in Development; anywhere else
+// the public host name(s) must be listed (AllowedHosts=gamehub.example.com).
+var allowedHosts = builder.Configuration["AllowedHosts"];
+
+if (!builder.Environment.IsDevelopment() &&
+    (string.IsNullOrWhiteSpace(allowedHosts) ||
+     allowedHosts.Split(';').Any(host => host.Trim() == "*")))
+{
+    throw new InvalidOperationException(
+        "AllowedHosts must list the public host name(s) outside Development " +
+        "(e.g. AllowedHosts=gamehub.example.com); \"*\" is only accepted in Development.");
+}
+
+// Reverse proxies whose X-Forwarded-For/-Proto headers are trusted, besides
+// loopback (ForwardedHeaders__KnownProxies__0 = IP,
+// ForwardedHeaders__KnownNetworks__0 = CIDR). With TLS ending at the proxy,
+// this makes HTTPS/HSTS and the client IP (rate limiting) match the original
+// request. Headers from any other address are ignored.
+var knownProxies = (builder.Configuration
+        .GetSection("ForwardedHeaders:KnownProxies")
+        .Get<string[]>() ?? [])
+    .Select(proxy => IPAddress.Parse(proxy.Trim()))
+    .ToArray();
+
+var knownNetworks = (builder.Configuration
+        .GetSection("ForwardedHeaders:KnownNetworks")
+        .Get<string[]>() ?? [])
+    .Select(network => System.Net.IPNetwork.Parse(network.Trim()))
+    .ToArray();
+
 // Browser origins allowed to call the API from another origin
 // (Cors__AllowedOrigins__0, __1, ...). Empty means same-origin only, which is
 // all the Vite dev proxy or a same-domain reverse proxy needs.
@@ -57,6 +107,56 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddSignalR();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    foreach (var proxy in knownProxies)
+    {
+        options.KnownProxies.Add(proxy);
+    }
+
+    foreach (var network in knownNetworks)
+    {
+        options.KnownIPNetworks.Add(network);
+    }
+});
+
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+
+// Login and registration only (AuthController), per client IP: enough for
+// normal use, slow for password guessing. The chat (REST and SignalR) is not
+// limited.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(AuthController.RateLimitPolicy, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+        }
+
+        // Same { message } shape as the controllers.
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many attempts. Try again in a minute." },
+            cancellationToken);
+    };
+});
 
 if (corsOrigins.Length > 0)
 {
@@ -111,8 +211,10 @@ builder.Services
             // Only accept the algorithm JwtService signs with.
             ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
 
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
@@ -139,6 +241,9 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// First, so everything below sees the original scheme and client IP.
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
@@ -171,9 +276,23 @@ if (corsOrigins.Length > 0)
     app.UseCors();
 }
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
+
+// Anonymous, not rate limited. /health: the process answers (liveness).
+// /health/ready: it can also reach PostgreSQL (readiness).
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();

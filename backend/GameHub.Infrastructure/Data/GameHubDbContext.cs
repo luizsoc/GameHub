@@ -35,11 +35,11 @@ public class GameHubDbContext : DbContext, IUnitOfWork
 
             entity.Property(x => x.Username)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(User.UsernameMaxLength);
 
             entity.Property(x => x.Email)
                 .IsRequired()
-                .HasMaxLength(255);
+                .HasMaxLength(User.EmailMaxLength);
 
             entity.Property(x => x.PasswordHash)
                 .IsRequired();
@@ -54,10 +54,10 @@ public class GameHubDbContext : DbContext, IUnitOfWork
 
             entity.Property(x => x.Name)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(Channel.NameMaxLength);
 
             entity.Property(x => x.Description)
-                .HasMaxLength(500);
+                .HasMaxLength(Channel.DescriptionMaxLength);
         });
 
         modelBuilder.Entity<ChannelMember>(entity =>
@@ -85,7 +85,7 @@ public class GameHubDbContext : DbContext, IUnitOfWork
 
             entity.Property(x => x.Content)
                 .IsRequired()
-                .HasMaxLength(2000);
+                .HasMaxLength(Message.ContentMaxLength);
 
             entity.HasOne(x => x.User)
                 .WithMany(x => x.Messages)
