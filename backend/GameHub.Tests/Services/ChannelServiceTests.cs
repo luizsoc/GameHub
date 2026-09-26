@@ -465,6 +465,61 @@ public class ChannelServiceTests
         VerifyNothingAdded();
     }
 
+    [Fact]
+    public async Task CreateAsync_ShouldThrow_WhenNameUsesDirectMessagePrefix()
+    {
+        // Arrange
+        var request = new CreateChannelRequest
+        {
+            Name = "DM:reserved"
+        };
+
+        // Act
+        var action = async () => await _service.CreateAsync(_userId, request);
+
+        // Assert
+        await action.Should()
+            .ThrowAsync<ArgumentException>();
+
+        _channelRepository.Verify(
+            x => x.AddAsync(It.IsAny<Channel>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AddMemberAsync_ShouldThrow_WhenChannelIsDirectMessage()
+    {
+        // Arrange: a direct message the caller takes part in.
+        var channelId = Guid.NewGuid();
+
+        _channelRepository
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, _userId))
+            .ReturnsAsync(new Channel
+            {
+                Id = channelId,
+                Name = "dm:key",
+                IsPrivate = true,
+                DirectMessageKey = "key"
+            });
+
+        // Act
+        var action = async () => await _service.AddMemberAsync(
+            _userId,
+            channelId,
+            new AddChannelMemberRequest { Username = "carla" });
+
+        // Assert
+        await action.Should()
+            .ThrowAsync<ArgumentException>()
+            .WithMessage("Members cannot be added to a direct message.");
+
+        _userRepository.Verify(
+            x => x.GetByUsernameAsync(It.IsAny<string>()),
+            Times.Never);
+
+        VerifyNothingAdded();
+    }
+
     private Channel PrivateChannelAccessibleToCaller()
     {
         var channel = new Channel

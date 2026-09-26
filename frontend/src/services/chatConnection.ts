@@ -5,10 +5,12 @@ import {
 } from '@microsoft/signalr'
 import { getToken } from '../auth/tokenStorage'
 import { CHAT_HUB_URL } from '../config'
+import type { DirectMessageResponse } from '../types/channel'
 import type { MessageResponse, SendMessageRequest } from '../types/message'
 
 // Contract of backend/GameHub.Api/Hubs/ChatHub.cs
 const RECEIVE_MESSAGE = 'ReceiveMessage'
+const DIRECT_MESSAGE_CREATED = 'DirectMessageCreated'
 
 export function createChatConnection(): HubConnection {
   return (
@@ -65,4 +67,15 @@ export function onReceiveMessage(
   connection.on(RECEIVE_MESSAGE, handler)
 
   return () => connection.off(RECEIVE_MESSAGE, handler)
+}
+
+// Sent by the server to both participants when a direct message is created
+// (not to anyone else), each seeing the other participant.
+export function onDirectMessageCreated(
+  connection: HubConnection,
+  handler: (directMessage: DirectMessageResponse) => void,
+): () => void {
+  connection.on(DIRECT_MESSAGE_CREATED, handler)
+
+  return () => connection.off(DIRECT_MESSAGE_CREATED, handler)
 }

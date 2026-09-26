@@ -58,6 +58,15 @@ public class GameHubDbContext : DbContext, IUnitOfWork
 
             entity.Property(x => x.Description)
                 .HasMaxLength(Channel.DescriptionMaxLength);
+
+            // One direct message per pair of users, also under concurrent
+            // requests: the second insert fails on this index. Regular
+            // channels have no key (NULLs do not conflict).
+            entity.Property(x => x.DirectMessageKey)
+                .HasMaxLength(Channel.DirectMessageKeyMaxLength);
+
+            entity.HasIndex(x => x.DirectMessageKey)
+                .IsUnique();
         });
 
         modelBuilder.Entity<ChannelMember>(entity =>

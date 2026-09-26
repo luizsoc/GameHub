@@ -39,4 +39,20 @@ public class UserRepository : IUserRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Email == email);
     }
+
+    public async Task<IEnumerable<User>> SearchByUsernameAsync(
+        string term,
+        Guid excludedUserId,
+        int limit)
+    {
+        var lowerTerm = term.ToLower();
+
+        return await _context.Users
+            .AsNoTracking()
+            .Where(x => x.Id != excludedUserId &&
+                x.Username.ToLower().Contains(lowerTerm))
+            .OrderBy(x => x.Username)
+            .Take(limit)
+            .ToListAsync();
+    }
 }

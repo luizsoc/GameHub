@@ -8,6 +8,10 @@ namespace GameHub.Api.Hubs;
 [Authorize]
 public class ChatHub : Hub
 {
+    // Server → client, sent by DirectMessagesController to the two
+    // participants of a new direct message (DirectMessageResponse).
+    public const string DirectMessageCreatedEvent = "DirectMessageCreated";
+
     private readonly IMessageService _messageService;
     private readonly IChannelService _channelService;
 

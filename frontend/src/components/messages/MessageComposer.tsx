@@ -19,14 +19,15 @@ const COUNTER_ID = 'composer-counter'
 const HINT_ID = 'composer-hint'
 
 interface MessageComposerProps {
-  channelName: string
+  // What the message goes to, as shown: "#geral" or "@ana".
+  conversationLabel: string
   isConnected: boolean
   notice: ComposerNotice | null
   onSend: (content: string) => Promise<void>
 }
 
 function MessageComposer({
-  channelName,
+  conversationLabel,
   isConnected,
   notice,
   onSend,
@@ -105,8 +106,8 @@ function MessageComposer({
           rows={1}
           value={content}
           maxLength={MESSAGE_MAX_LENGTH}
-          placeholder={`Mensagem para #${channelName}`}
-          aria-label={`Mensagem para #${channelName}`}
+          placeholder={`Mensagem para ${conversationLabel}`}
+          aria-label={`Mensagem para ${conversationLabel}`}
           aria-describedby={describedBy}
           autoComplete="off"
           readOnly={isSending}

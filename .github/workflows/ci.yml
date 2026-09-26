@@ -26,7 +26,8 @@ jobs:
       - name: Build
         run: dotnet build GameHub.slnx --configuration Release --no-restore
 
-      # Unit and in-memory integration tests (SQLite): no database or secrets needed.
+      # Unit and in-process integration tests (temporary SQLite file): no
+      # database server or secrets needed.
       - name: Test
         run: dotnet test GameHub.slnx --configuration Release --no-build
 

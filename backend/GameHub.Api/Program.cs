@@ -176,6 +176,10 @@ builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
 
 builder.Services.AddScoped<IChannelService, ChannelService>();
 
+builder.Services.AddScoped<IDirectMessageService, DirectMessageService>();
+
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<IUnitOfWork>(sp =>
     sp.GetRequiredService<GameHubDbContext>());
 

@@ -57,6 +57,30 @@ public static class ApiCalls
         });
     }
 
+    public static Task<HttpResponseMessage> OpenDirectMessageAsync(
+        this HttpClient client,
+        Guid userId)
+    {
+        return client.PostAsJsonAsync("/api/direct-messages", new OpenDirectMessageRequest
+        {
+            UserId = userId
+        });
+    }
+
+    public static async Task<List<DirectMessageResponse>> GetDirectMessagesAsync(this HttpClient client)
+    {
+        var response = await client.GetAsync("/api/direct-messages");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        return (await response.Content.ReadFromJsonAsync<List<DirectMessageResponse>>())!;
+    }
+
+    public static Task<HttpResponseMessage> SearchUsersAsync(this HttpClient client, string? username)
+    {
+        return client.GetAsync($"/api/users/search?username={Uri.EscapeDataString(username ?? string.Empty)}");
+    }
+
     public static Task<HttpResponseMessage> AddMemberAsync(
         this HttpClient client,
         Guid channelId,

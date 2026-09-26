@@ -45,6 +45,12 @@ public class ChannelService : IChannelService
                 $"Channel description must be at most {Channel.DescriptionMaxLength} characters.");
         }
 
+        if (name.StartsWith(Channel.DirectMessageNamePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"Channel names cannot start with \"{Channel.DirectMessageNamePrefix}\".");
+        }
+
         if (await _channelRepository.ExistsByNameAsync(name))
         {
             throw new InvalidOperationException(
@@ -123,6 +129,13 @@ public class ChannelService : IChannelService
         {
             throw new ArgumentException(
                 "Members can only be added to private channels.");
+        }
+
+        // A direct message is between its two participants only.
+        if (channel.IsDirectMessage)
+        {
+            throw new ArgumentException(
+                "Members cannot be added to a direct message.");
         }
 
         var user = await _userRepository

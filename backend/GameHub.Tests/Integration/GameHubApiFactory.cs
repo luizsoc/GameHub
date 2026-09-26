@@ -18,11 +18,14 @@ using Microsoft.Extensions.Hosting;
 namespace GameHub.Tests.Integration;
 
 // The real API (controllers, JWT authentication, ChatHub, EF Core
-// repositories) hosted in memory, on an in-memory SQLite database instead of
-// PostgreSQL. No external database or secret is needed.
+// repositories) hosted in memory, on a throwaway SQLite database file instead
+// of PostgreSQL. No external database or secret is needed. A file (not a
+// single in-memory connection) lets concurrent requests use their own
+// connections, as they would against PostgreSQL.
 public class GameHubApiFactory : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private readonly string _databasePath =
+        Path.Combine(Path.GetTempPath(), $"gamehub-tests-{Guid.NewGuid():N}.db");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -42,10 +45,8 @@ public class GameHubApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<DbContextOptions<GameHubDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<GameHubDbContext>>();
 
-            // One open connection keeps the in-memory database alive.
-            _connection.Open();
             services.AddDbContext<GameHubDbContext>(options =>
-                options.UseSqlite(_connection));
+                options.UseSqlite($"Data Source={_databasePath}"));
         });
     }
 
@@ -130,7 +131,9 @@ public class GameHubApiFactory : WebApplicationFactory<Program>
 
         if (disposing)
         {
-            _connection.Dispose();
+            // Pooled connections keep the file open.
+            SqliteConnection.ClearAllPools();
+            File.Delete(_databasePath);
         }
     }
 }

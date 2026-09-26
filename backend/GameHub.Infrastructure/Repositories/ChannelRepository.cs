@@ -34,6 +34,7 @@ public class ChannelRepository : IChannelRepository
         return await _context.Channels
             .AsNoTracking()
             .Where(AccessibleBy(userId))
+            .Where(x => x.DirectMessageKey == null)
             .OrderBy(x => x.Name)
             .ToListAsync();
     }
@@ -61,5 +62,25 @@ public class ChannelRepository : IChannelRepository
     public async Task AddMemberAsync(ChannelMember member)
     {
         await _context.ChannelMembers.AddAsync(member);
+    }
+
+    public async Task<Channel?> GetDirectMessageAsync(string directMessageKey)
+    {
+        return await _context.Channels
+            .AsNoTracking()
+            .Include(x => x.Members)
+            .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.DirectMessageKey == directMessageKey);
+    }
+
+    public async Task<IEnumerable<Channel>> GetDirectMessagesAsync(Guid userId)
+    {
+        return await _context.Channels
+            .AsNoTracking()
+            .Include(x => x.Members)
+            .ThenInclude(x => x.User)
+            .Where(x => x.DirectMessageKey != null &&
+                x.Members.Any(member => member.UserId == userId))
+            .ToListAsync();
     }
 }

@@ -7,6 +7,12 @@ export interface UserResponse {
   createdAt: string
 }
 
+// GET /api/users/search: only what is needed to pick someone.
+export interface UserSearchResponse {
+  id: string
+  username: string
+}
+
 export interface RegisterUserRequest {
   username: string
   email: string

@@ -35,14 +35,22 @@ function getConnectionNotice({ status, error }: ChatConnectionState): ComposerNo
 }
 
 interface MessagePanelProps {
+  // A channel or a direct message: both are channels in the backend.
   channelId: string
-  channelName: string
+  // As shown in the UI: "#geral" for a channel, "@ana" for a direct message.
+  conversationLabel: string
+  isDirectMessage?: boolean
   chat: ChatConnectionState
 }
 
 // History comes from the REST endpoint (useMessages); SignalR only adds what
 // happens after that and sends new messages.
-function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
+function MessagePanel({
+  channelId,
+  conversationLabel,
+  isDirectMessage = false,
+  chat,
+}: MessagePanelProps) {
   const { messages, isLoading, error, reload, addMessage } = useMessages(channelId)
   const { connection, status } = chat
   const isConnected = status === 'connected'
@@ -97,7 +105,11 @@ function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
       return (
         <EmptyState
           icon={<IconMessage size={20} />}
-          title={`Ainda não há mensagens em #${channelName}.`}
+          title={
+            isDirectMessage
+              ? `Ainda não há mensagens com ${conversationLabel}.`
+              : `Ainda não há mensagens em ${conversationLabel}.`
+          }
           description="Envie a primeira mensagem para começar a conversa."
         />
       )
@@ -113,7 +125,7 @@ function MessagePanel({ channelId, channelName, chat }: MessagePanelProps) {
       {/* Keyed by channel: a draft or send error never carries over. */}
       <MessageComposer
         key={channelId}
-        channelName={channelName}
+        conversationLabel={conversationLabel}
         isConnected={isConnected}
         notice={getConnectionNotice(chat)}
         onSend={handleSend}
