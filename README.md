@@ -22,7 +22,7 @@ PostgreSQL · React 19 · TypeScript · Vite · Docker · GitHub Actions
   automática e reentrada no canal.
 - **Clean Architecture:** backend em quatro projetos (Domain, Application,
   Infrastructure, Api), com EF Core, PostgreSQL e migrations explícitas.
-- **Testes e CI:** 32 testes automatizados (xUnit) e GitHub Actions a cada
+- **Testes e CI:** 31 testes automatizados (xUnit) e GitHub Actions a cada
   push e pull request na `master` (build e testes do backend; lint e build do
   frontend).
 - **Sobe com Docker Compose:** PostgreSQL, migrations e API com healthcheck,
@@ -262,7 +262,7 @@ No GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)), os mesmos checks
 rodam a cada push e pull request na `master`: restore, build e testes do
 backend; `npm ci`, lint e build do frontend.
 
-O backend tem 32 testes em `backend/GameHub.Tests`:
+O backend tem 31 testes em `backend/GameHub.Tests`:
 
 | Arquivo | Testes | O que cobre |
 | ------- | ------ | ----------- |
@@ -270,7 +270,6 @@ O backend tem 32 testes em `backend/GameHub.Tests`:
 | `Services/MessageServiceTests.cs` | 9 | Envio (incluindo remoção de espaços nas pontas, conteúdo vazio ou longo demais, canal ou usuário inexistente) e histórico. |
 | `Services/ChannelServiceTests.cs` | 7 | Criação (incluindo nome vazio, duplicado ou longo demais e descrição longa demais) e busca por id. |
 | `Security/JwtServiceTests.cs` | 3 | Geração de um JWT válido (com issuer e audience) e erro quando a chave não está configurada. |
-| `UnitTest1.cs` | 1 | Teste vazio do template do xUnit. |
 
 São testes de unidade com repositórios simulados (Moq); não há testes de
 integração com banco ou servidor real. O frontend não tem testes automatizados:
@@ -508,6 +507,7 @@ GameHub/
 ├── docker-compose.yml           # PostgreSQL + migrate + API (ambiente local)
 ├── docker-compose.prod.yml      # Override de produção (valores obrigatórios)
 ├── .env.example                 # Variáveis do Docker Compose (JWT_KEY, produção)
+├── LICENSE                      # MIT
 └── GameHub.slnx
 ```
 
@@ -532,12 +532,16 @@ Pontos observados no código atual:
 - **Conexão Offline:** oferecer um botão "Tentar novamente" em vez de pedir
   para recarregar a página.
 - **Testes:** testes de integração (API + banco) e testes automatizados no
-  frontend; remover o teste vazio `UnitTest1`.
-- **Dependências:** `Serilog.AspNetCore` e `FluentValidation` estão
-  referenciados, mas não são usados; adotar ou remover.
+  frontend.
 - **Deploy:** reverse proxy com TLS servindo o frontend (veja
   [Preparação para produção](#preparação-para-produção)), rotina de backup do
   PostgreSQL e persistência das chaves de Data Protection do ASP.NET Core
   (hoje ficam dentro do container; o GameHub não depende delas).
 - **Mensagens de erro:** o frontend exibe em inglês o texto do backend para
   casos raros (limite de tentativas, tamanho acima do limite).
+
+---
+
+## Licença
+
+Distribuído sob a licença MIT. Veja [LICENSE](LICENSE).
