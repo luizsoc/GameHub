@@ -9,19 +9,36 @@ namespace GameHub.Api.Hubs;
 public class ChatHub : Hub
 {
     private readonly IMessageService _messageService;
+    private readonly IChannelService _channelService;
 
-    public ChatHub(IMessageService messageService)
+    public ChatHub(
+        IMessageService messageService,
+        IChannelService channelService)
     {
         _messageService = messageService;
+        _channelService = channelService;
     }
 
+    // Same access rule as the REST API: the group of a private channel only
+    // ever contains connections of its members, so ReceiveMessage never
+    // reaches anyone else.
     public async Task JoinChannel(Guid channelId)
     {
+        var userId = GetUserId();
+
+        var channel = await _channelService.GetByIdAsync(userId, channelId);
+
+        if (channel is null)
+        {
+            throw new HubException("Channel not found.");
+        }
+
         await Groups.AddToGroupAsync(
             Context.ConnectionId,
             channelId.ToString());
     }
 
+    // Leaving a group exposes nothing, so it needs no access check.
     public async Task LeaveChannel(Guid channelId)
     {
         await Groups.RemoveFromGroupAsync(
@@ -31,18 +48,25 @@ public class ChatHub : Hub
 
     public async Task SendMessage(SendMessageRequest request)
     {
-        var userId = Context.UserIdentifier;
+        var userId = GetUserId();
 
-        if (!Guid.TryParse(userId, out var parsedUserId))
-        {
-            throw new HubException("Invalid user identity.");
-        }
-
+        // Checks access before storing anything; the broadcast only happens
+        // after the message was stored.
         var message = await _messageService.SendAsync(
-            parsedUserId,
+            userId,
             request);
 
         await Clients.Group(request.ChannelId.ToString())
             .SendAsync("ReceiveMessage", message);
+    }
+
+    private Guid GetUserId()
+    {
+        if (!Guid.TryParse(Context.UserIdentifier, out var userId))
+        {
+            throw new HubException("Invalid user identity.");
+        }
+
+        return userId;
     }
 }

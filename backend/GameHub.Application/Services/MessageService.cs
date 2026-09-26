@@ -49,8 +49,10 @@ public class MessageService : IMessageService
                 $"Message content must be at most {Message.ContentMaxLength} characters.");
         }
 
+        // A private channel the user is not a member of is "not found", and
+        // nothing is stored.
         var channel = await _channelRepository
-            .GetByIdAsync(request.ChannelId);
+            .GetAccessibleByIdAsync(request.ChannelId, userId);
 
         if (channel is null)
         {
@@ -89,12 +91,24 @@ public class MessageService : IMessageService
     }
 
     public async Task<IEnumerable<MessageResponse>> GetByChannelAsync(
+        Guid userId,
         Guid channelId)
     {
         if (channelId == Guid.Empty)
         {
             throw new ArgumentException(
                 "ChannelId is required.");
+        }
+
+        // Checked before reading any message. Also answers "not found" for a
+        // channel that does not exist, so the two cases look the same.
+        var channel = await _channelRepository
+            .GetAccessibleByIdAsync(channelId, userId);
+
+        if (channel is null)
+        {
+            throw new KeyNotFoundException(
+                "Channel not found.");
         }
 
         var messages = await _messageRepository

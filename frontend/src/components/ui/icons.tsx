@@ -122,6 +122,26 @@ export function IconX(props: IconProps) {
   )
 }
 
+export function IconLock(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </Icon>
+  )
+}
+
+export function IconUserPlus(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21a7 7 0 0 1 14 0" />
+      <path d="M19 8v6" />
+      <path d="M16 11h6" />
+    </Icon>
+  )
+}
+
 export function IconMenu(props: IconProps) {
   return (
     <Icon {...props}>

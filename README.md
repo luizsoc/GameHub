@@ -22,7 +22,7 @@ PostgreSQL · React 19 · TypeScript · Vite · Docker · GitHub Actions
   automática e reentrada no canal.
 - **Clean Architecture:** backend em quatro projetos (Domain, Application,
   Infrastructure, Api), com EF Core, PostgreSQL e migrations explícitas.
-- **Testes e CI:** 31 testes automatizados (xUnit) e GitHub Actions a cada
+- **Testes e CI:** 64 testes automatizados (xUnit) e GitHub Actions a cada
   push e pull request na `master` (build e testes do backend; lint e build do
   frontend).
 - **Sobe com Docker Compose:** PostgreSQL, migrations e API com healthcheck,
@@ -53,6 +53,10 @@ PostgreSQL · React 19 · TypeScript · Vite · Docker · GitHub Actions
 - Lista de canais em ordem alfabética e criação de canal com nome único e
   descrição opcional (nome duplicado retorna "Já existe um canal com esse
   nome.").
+- Canais públicos (abertos a todos os usuários) e **canais privados**: só os
+  membros veem o canal, leem o histórico e enviam mensagens. Quem cria um canal
+  privado vira membro automaticamente, e qualquer membro pode adicionar outras
+  pessoas pelo nome de usuário. Canais privados aparecem com um cadeado.
 
 **Mensagens**
 
@@ -104,7 +108,7 @@ PostgreSQL · React 19 · TypeScript · Vite · Docker · GitHub Actions
 | Backend | .NET 10, ASP.NET Core (Web API), SignalR, Entity Framework Core 10, Npgsql, JWT Bearer (HS256), `PasswordHasher` do ASP.NET Core Identity |
 | Banco de dados | PostgreSQL 17 (imagem Docker `postgres:17`) |
 | Frontend | React 19, TypeScript, Vite 8, React Router 7, Axios, `@microsoft/signalr`, Oxlint |
-| Testes | xUnit, Moq, FluentAssertions |
+| Testes | xUnit, Moq, FluentAssertions, WebApplicationFactory + SQLite em memória (integração) |
 | Infraestrutura | Docker, Docker Compose, EF Core migrations bundle, GitHub Actions (CI) |
 
 O frontend não usa biblioteca de componentes: o design system (tokens de cor,
@@ -141,11 +145,12 @@ Todas as rotas, exceto as de autenticação e de saúde, exigem `Authorization: 
 | ------ | ---- | --------- |
 | `POST` | `/api/auth/register` | Cadastro (409 se nome de usuário ou e-mail já existem). Limitado por IP (429). |
 | `POST` | `/api/auth/login` | Login; retorna `{ token }` (401 com credenciais inválidas). Limitado por IP (429). |
-| `GET` | `/api/channels` | Lista os canais em ordem alfabética. |
-| `GET` | `/api/channels/{id}` | Detalhe de um canal. |
-| `POST` | `/api/channels` | Cria um canal (409 se o nome já existe). |
-| `GET` | `/api/messages/channel/{channelId}` | Histórico do canal. |
-| `POST` | `/api/messages` | Salva uma mensagem (não é transmitida em tempo real; o frontend envia pelo hub). |
+| `GET` | `/api/channels` | Lista, em ordem alfabética, os canais públicos e os privados de que o usuário é membro. |
+| `GET` | `/api/channels/{id}` | Detalhe de um canal (404 se não existe ou se é privado e o usuário não é membro). |
+| `POST` | `/api/channels` | Cria um canal; `isPrivate` opcional (padrão público). 409 se o nome já existe. |
+| `POST` | `/api/channels/{id}/members` | Adiciona um usuário (`{ username }`) a um canal privado. Só membros: 404 para quem não tem acesso ou para usuário inexistente, 409 se já é membro, 400 em canal público. |
+| `GET` | `/api/messages/channel/{channelId}` | Histórico do canal (404 se o usuário não tem acesso). |
+| `POST` | `/api/messages` | Salva uma mensagem (404 se o usuário não tem acesso; não é transmitida em tempo real, o frontend envia pelo hub). |
 | `GET` | `/health` | Liveness: o processo responde (`Healthy`). Anônimo. |
 | `GET` | `/health/ready` | Readiness: a API também alcança o PostgreSQL (200 ou 503). Anônimo. |
 
@@ -262,18 +267,22 @@ No GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)), os mesmos checks
 rodam a cada push e pull request na `master`: restore, build e testes do
 backend; `npm ci`, lint e build do frontend.
 
-O backend tem 31 testes em `backend/GameHub.Tests`:
+O backend tem 64 testes em `backend/GameHub.Tests`:
 
 | Arquivo | Testes | O que cobre |
 | ------- | ------ | ----------- |
 | `Services/AuthServiceTests.cs` | 12 | Cadastro e login: campos vazios, nome de usuário longo demais, nome de usuário ou e-mail duplicado, e-mail inexistente e senha incorreta. |
-| `Services/MessageServiceTests.cs` | 9 | Envio (incluindo remoção de espaços nas pontas, conteúdo vazio ou longo demais, canal ou usuário inexistente) e histórico. |
-| `Services/ChannelServiceTests.cs` | 7 | Criação (incluindo nome vazio, duplicado ou longo demais e descrição longa demais) e busca por id. |
+| `Services/MessageServiceTests.cs` | 11 | Envio (incluindo remoção de espaços nas pontas, conteúdo vazio ou longo demais, canal ou usuário inexistente) e histórico; nada é lido ou gravado em canal sem acesso. |
+| `Services/ChannelServiceTests.cs` | 17 | Criação (incluindo nome vazio, duplicado ou longo demais, descrição longa demais e o criador como membro de um canal privado), listagem, busca por id e adição de membros (sucesso, sem acesso, canal público, usuário inexistente, duplicado). |
 | `Security/JwtServiceTests.cs` | 3 | Geração de um JWT válido (com issuer e audience) e erro quando a chave não está configurada. |
+| `Integration/PrivateChannelApiTests.cs` | 14 | Canais privados pela API REST real: membro, não membro que conhece o id do canal, usuário não autenticado, adição de membro, duplicidade, usuário inexistente e isolamento entre dois canais privados. |
+| `Integration/PrivateChannelHubTests.cs` | 7 | Canais privados pelo `ChatHub` com conexões SignalR reais: `JoinChannel` e `SendMessage` de membro, não membro e membro adicionado; nada é gravado nem transmitido para quem não tem acesso. |
 
-São testes de unidade com repositórios simulados (Moq); não há testes de
-integração com banco ou servidor real. O frontend não tem testes automatizados:
-a verificação é o lint e a checagem de tipos do build.
+Os testes de serviço são de unidade, com repositórios simulados (Moq). Os de
+integração sobem a API em memória (`WebApplicationFactory`, com JWT e SignalR
+reais) sobre um SQLite em memória: não precisam de PostgreSQL nem de segredos.
+O frontend não tem testes automatizados: a verificação é o lint e a checagem de
+tipos do build.
 
 ---
 
@@ -327,6 +336,13 @@ a verificação é o lint e a checagem de tipos do build.
   terminado no proxy, a API enxerga HTTPS (HSTS é enviado) e o IP real do
   cliente. A API não redireciona HTTP → HTTPS por conta própria (sem porta
   HTTPS configurada), o que evita loops; esse redirecionamento é do proxy.
+- **Canais privados:** a regra "o usuário pode acessar o canal?" (canal
+  público, ou usuário em `ChannelMembers`) existe em um único lugar, uma
+  consulta do `ChannelRepository` traduzida para SQL, e toda leitura de canal
+  passa por ela: listagem, detalhe, histórico, envio por REST, `JoinChannel` e
+  `SendMessage` no hub. Quem não é membro recebe a mesma resposta de um canal
+  inexistente (404 ou erro no hub), sem nome, descrição ou mensagens; nada é
+  gravado nem transmitido. Esconder o canal na interface é só conveniência.
 - **Rate limiting:** login e cadastro aceitam 10 requisições por minuto por
   IP; depois disso, 429 com `Retry-After` e `{ message }`. O chat (REST e
   SignalR) e os endpoints de saúde não são limitados.
@@ -374,9 +390,9 @@ Hub: `/hubs/chat` (`ChatHub`, exige autenticação).
 
 | Direção | Método | Descrição |
 | ------- | ------ | --------- |
-| Cliente → servidor | `JoinChannel(channelId)` | Entra no grupo do canal. |
+| Cliente → servidor | `JoinChannel(channelId)` | Entra no grupo do canal, se o usuário tiver acesso (em canal privado, só membros). |
 | Cliente → servidor | `LeaveChannel(channelId)` | Sai do grupo do canal. |
-| Cliente → servidor | `SendMessage({ content, channelId })` | Salva a mensagem e a transmite ao grupo do canal. |
+| Cliente → servidor | `SendMessage({ content, channelId })` | Confere o acesso, salva a mensagem e só então a transmite ao grupo do canal. |
 | Servidor → cliente | `ReceiveMessage(message)` | Mensagem nova, com `id`, `content`, `userId`, `username`, `channelId` e `createdAt`. |
 
 - O usuário da conexão é identificado pela claim `sub` do JWT (um
@@ -399,12 +415,13 @@ Tabelas (EF Core + PostgreSQL):
 | Tabela | Conteúdo | Restrições principais |
 | ------ | -------- | --------------------- |
 | `Users` | Usuários | `Username` (até 50) e `Email` (até 255) únicos |
-| `Channels` | Canais | `Name` (até 100) único; `Description` até 500 |
+| `Channels` | Canais | `Name` (até 100) único; `Description` até 500; `IsPrivate` (padrão `false`) |
 | `Messages` | Mensagens | `Content` até 2000; índice em (`ChannelId`, `CreatedAt`) |
-| `ChannelMembers` | Associação usuário–canal | Existe no modelo, mas ainda não é usada pela aplicação |
+| `ChannelMembers` | Membros dos canais privados | Chave composta (`UserId`, `ChannelId`), sem duplicatas; removida em cascata com o usuário ou o canal |
 
-Migrations em `backend/GameHub.Infrastructure/Migrations`: `InitialCreate` e
-`CreateChatEntities`. A aplicação **não** aplica migrations sozinha ao iniciar;
+Migrations em `backend/GameHub.Infrastructure/Migrations`: `InitialCreate`,
+`CreateChatEntities` e `AddChannelIsPrivate` (canais já existentes ficam
+públicos). A aplicação **não** aplica migrations sozinha ao iniciar;
 elas são aplicadas explicitamente:
 
 - **Docker:** a imagem inclui um *migrations bundle* do EF Core (`efbundle`),
@@ -483,7 +500,7 @@ GameHub/
 │   ├── GameHub.Application/     # Serviços, DTOs, interfaces
 │   ├── GameHub.Domain/          # Entidades
 │   ├── GameHub.Infrastructure/  # DbContext, repositórios, migrations, JWT, hash de senha
-│   ├── GameHub.Tests/           # Testes xUnit
+│   ├── GameHub.Tests/           # Testes xUnit (unidade e integração)
 │   ├── Dockerfile               # Imagem da API + migrations bundle
 │   └── .dockerignore
 ├── frontend/
@@ -521,18 +538,25 @@ Pontos observados no código atual:
   todas as mensagens do canal.
 - **Envio via REST:** `POST /api/messages` salva sem transmitir pelo SignalR;
   transmitir também, ou manter apenas o envio pelo hub.
-- **Participação em canais:** a tabela `ChannelMembers` existe, mas ainda não
-  é usada.
-- **Lista de canais em tempo real:** a criação de um canal por outro usuário
-  não atualiza automaticamente a lista de canais nas sessões já abertas;
-  atualmente é necessário recarregar a lista.
+- **Membros de canais privados:** não há como remover membros, sair do canal
+  ou ver a lista de membros; qualquer membro pode adicionar outros (não há
+  papel de dono).
+- **Lista de canais em tempo real:** a criação de um canal por outro usuário,
+  ou ser adicionado a um canal privado, não atualiza automaticamente a lista
+  de canais nas sessões já abertas; atualmente é necessário recarregar a lista.
+- **Nome de canal único em todo o sistema:** criar um canal com o nome de um
+  canal privado existente retorna 409, o que revela que esse nome existe (sem
+  expor nada do conteúdo).
+- **Adição de membro simultânea:** duas requisições ao mesmo tempo para o mesmo
+  usuário não geram registro duplicado (a chave composta impede), mas a
+  segunda pode responder 500 (violação de chave não tratada) em vez de 409.
 - **Política de senha:** hoje só é exigido que a senha não esteja vazia.
 - **Sessão:** não há renovação de token (refresh token); após 2 horas é
   preciso entrar de novo. Avaliar cookie `HttpOnly` no lugar do `localStorage`.
 - **Conexão Offline:** oferecer um botão "Tentar novamente" em vez de pedir
   para recarregar a página.
-- **Testes:** testes de integração (API + banco) e testes automatizados no
-  frontend.
+- **Testes:** os testes de integração usam SQLite em memória; faltam testes
+  contra PostgreSQL e testes automatizados no frontend.
 - **Deploy:** reverse proxy com TLS servindo o frontend (veja
   [Preparação para produção](#preparação-para-produção)), rotina de backup do
   PostgreSQL e persistência das chaves de Data Protection do ASP.NET Core

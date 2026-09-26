@@ -4,9 +4,16 @@ namespace GameHub.Application.Interfaces;
 
 public interface IChannelService
 {
-    Task<ChannelResponse> CreateAsync(CreateChannelRequest request);
+    Task<ChannelResponse> CreateAsync(Guid userId, CreateChannelRequest request);
 
-    Task<IEnumerable<ChannelResponse>> GetAllAsync();
+    Task<IEnumerable<ChannelResponse>> GetAllAsync(Guid userId);
 
-    Task<ChannelResponse?> GetByIdAsync(Guid id);
+    // Null when the channel does not exist or is private and the user is not
+    // a member (the two cases are indistinguishable on purpose).
+    Task<ChannelResponse?> GetByIdAsync(Guid userId, Guid id);
+
+    Task<ChannelMemberResponse> AddMemberAsync(
+        Guid userId,
+        Guid channelId,
+        AddChannelMemberRequest request);
 }

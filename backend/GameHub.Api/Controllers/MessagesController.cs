@@ -53,14 +53,25 @@ public class MessagesController : ControllerBase
     {
         try
         {
+            var userIdClaim = User.FindFirstValue("sub");
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user identity." });
+            }
+
             var messages = await _messageService
-                .GetByChannelAsync(channelId);
+                .GetByChannelAsync(userId, channelId);
 
             return Ok(messages);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 }

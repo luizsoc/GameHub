@@ -9,5 +9,6 @@ public interface IMessageService
         SendMessageRequest request);
 
     Task<IEnumerable<MessageResponse>> GetByChannelAsync(
+        Guid userId,
         Guid channelId);
 }

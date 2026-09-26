@@ -5,7 +5,7 @@ import type { ChannelResponse } from '../../types/channel'
 import FormField from '../FormField'
 import { Alert } from '../ui/Alert'
 import { Button, IconButton } from '../ui/Button'
-import { IconX } from '../ui/icons'
+import { IconLock, IconX } from '../ui/icons'
 
 // Column limits from GameHubDbContext (Channel.Name / Channel.Description).
 const NAME_MAX_LENGTH = 100
@@ -23,6 +23,7 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
   const [nameError, setNameError] = useState<string | undefined>()
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -87,6 +88,7 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
       const channel = await channelsApi.create({
         name: trimmedName,
         description: description.trim() || null,
+        isPrivate,
       })
 
       // Same as cancel: animate out, restore focus, then the parent unmounts
@@ -149,6 +151,27 @@ function CreateChannelModal({ onClose, onCreated }: CreateChannelModalProps) {
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />
+        </div>
+
+        <div className="checkbox-field">
+          <input
+            id="channel-private"
+            name="channel-private"
+            type="checkbox"
+            checked={isPrivate}
+            aria-describedby="channel-private-hint"
+            onChange={(event) => setIsPrivate(event.target.checked)}
+          />
+          <div>
+            <label htmlFor="channel-private">
+              <IconLock size={14} />
+              Canal privado
+            </label>
+            <p id="channel-private-hint" className="field-hint">
+              Só membros veem o canal e as mensagens. Você entra como membro e
+              pode adicionar outras pessoas depois.
+            </p>
+          </div>
         </div>
 
         <div className="modal-actions">

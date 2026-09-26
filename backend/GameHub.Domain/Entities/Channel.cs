@@ -12,6 +12,10 @@ public class Channel
 
     public string? Description { get; set; }
 
+    // Public channels are open to every authenticated user; private ones only
+    // to the users in Members.
+    public bool IsPrivate { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Message> Messages { get; set; } = new List<Message>();

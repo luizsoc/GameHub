@@ -60,7 +60,15 @@ export function useMessages(channelId: string | null) {
       })
       .catch((err: unknown) => {
         if (!controller.signal.aborted) {
-          setResult({ channelId, status: 'error', error: getErrorMessage(err) })
+          // 404: the channel no longer exists or the user has no access to it
+          // (a private channel they are not a member of).
+          setResult({
+            channelId,
+            status: 'error',
+            error: getErrorMessage(err, {
+              404: 'Canal não encontrado ou você não tem acesso a ele.',
+            }),
+          })
         }
       })
 

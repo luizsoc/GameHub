@@ -42,7 +42,7 @@ public class MessageServiceTests
         };
 
         _channelRepositoryMock
-            .Setup(x => x.GetByIdAsync(channelId))
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, It.IsAny<Guid>()))
             .ReturnsAsync(channel);
 
         _userRepositoryMock
@@ -89,7 +89,7 @@ public class MessageServiceTests
         };
 
         _channelRepositoryMock
-            .Setup(x => x.GetByIdAsync(channelId))
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, It.IsAny<Guid>()))
             .ReturnsAsync(channel);
 
         _userRepositoryMock
@@ -155,7 +155,7 @@ public class MessageServiceTests
         };
 
         _channelRepositoryMock
-            .Setup(x => x.GetByIdAsync(channelId))
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, It.IsAny<Guid>()))
             .ReturnsAsync((Channel?)null);
 
         var service = CreateService();
@@ -182,7 +182,7 @@ public class MessageServiceTests
         };
 
         _channelRepositoryMock
-            .Setup(x => x.GetByIdAsync(channelId))
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, It.IsAny<Guid>()))
             .ReturnsAsync(new Channel { Id = channelId, Name = "general" });
 
         _userRepositoryMock
@@ -233,13 +233,17 @@ public class MessageServiceTests
             }
         };
 
+        _channelRepositoryMock
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, user.Id))
+            .ReturnsAsync(new Channel { Id = channelId, Name = "general" });
+
         _messageRepositoryMock
             .Setup(x => x.GetByChannelAsync(channelId))
             .ReturnsAsync(messages);
 
         var service = CreateService();
 
-        var result = await service.GetByChannelAsync(channelId);
+        var result = await service.GetByChannelAsync(user.Id, channelId);
 
         result.Should().HaveCount(2);
         result.First().Username.Should().Be("luiz");
@@ -252,7 +256,7 @@ public class MessageServiceTests
     {
         var service = CreateService();
 
-        var act = () => service.GetByChannelAsync(Guid.Empty);
+        var act = () => service.GetByChannelAsync(Guid.NewGuid(), Guid.Empty);
 
         await act.Should()
             .ThrowAsync<ArgumentException>()
@@ -280,6 +284,69 @@ public class MessageServiceTests
 
         _messageRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Message>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByChannelAsync_ShouldThrow_WhenChannelIsNotAccessible()
+    {
+        // A private channel the user is not a member of: the repository's
+        // access rule returns nothing for this user.
+        var userId = Guid.NewGuid();
+        var channelId = Guid.NewGuid();
+
+        _channelRepositoryMock
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, userId))
+            .ReturnsAsync((Channel?)null);
+
+        var service = CreateService();
+
+        var act = () => service.GetByChannelAsync(userId, channelId);
+
+        await act.Should()
+            .ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Channel not found.");
+
+        _messageRepositoryMock.Verify(
+            x => x.GetByChannelAsync(It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SendAsync_ShouldNotStoreMessage_WhenChannelIsNotAccessible()
+    {
+        var userId = Guid.NewGuid();
+        var channelId = Guid.NewGuid();
+
+        var request = new SendMessageRequest
+        {
+            ChannelId = channelId,
+            Content = "Hello"
+        };
+
+        _channelRepositoryMock
+            .Setup(x => x.GetAccessibleByIdAsync(channelId, userId))
+            .ReturnsAsync((Channel?)null);
+
+        var service = CreateService();
+
+        var act = () => service.SendAsync(userId, request);
+
+        await act.Should()
+            .ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Channel not found.");
+
+        // Checked for this user specifically, and nothing was stored.
+        _channelRepositoryMock.Verify(
+            x => x.GetAccessibleByIdAsync(channelId, userId),
+            Times.Once);
+
+        _messageRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Message>()),
+            Times.Never);
+
+        _unitOfWorkMock.Verify(
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

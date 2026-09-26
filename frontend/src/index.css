@@ -641,6 +641,41 @@ button {
   font-weight: 400;
 }
 
+/* Checkbox with its label and a hint below (e.g. "Canal privado"). */
+.checkbox-field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.checkbox-field input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkbox-field label svg {
+  color: var(--text-secondary);
+}
+
+.field-hint {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 /* ==========================================================================
    Main layout
    ========================================================================== */
@@ -832,6 +867,12 @@ button {
   color: var(--text-tertiary);
 }
 
+/* Private channels: a lock in the place of the #. */
+.channel-lock {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
 .channel-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -866,8 +907,10 @@ button {
   min-height: 0;
 }
 
-/* Name keeps its width until space runs out, then truncates. */
+/* Name keeps its width until space runs out, then truncates. Positioned so
+   its visually hidden "(canal privado)" stays inside it. */
 .channel-title {
+  position: relative;
   flex: 0 1 auto;
   min-width: 0;
   margin: 0;
@@ -879,8 +922,14 @@ button {
   white-space: nowrap;
 }
 
-.channel-title .channel-hash {
+.channel-title .channel-hash,
+.channel-title .channel-lock {
   margin-right: var(--space-1);
+}
+
+/* Lines the lock up with the text. */
+.channel-title .channel-lock {
+  vertical-align: -2px;
 }
 
 /* Takes the remaining space and truncates first. */
@@ -1347,6 +1396,25 @@ button {
   margin: 0;
   padding-right: var(--space-10);
   font-size: var(--font-size-xl);
+  font-weight: 600;
+}
+
+/* Title plus a short line of context under it. */
+.modal-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.modal-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.modal-subtitle strong {
+  color: var(--text-primary);
   font-weight: 600;
 }
 

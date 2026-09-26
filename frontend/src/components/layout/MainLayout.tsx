@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useChannels } from '../../hooks/useChannels'
 import { useChatConnection } from '../../hooks/useChatConnection'
 import type { ChannelResponse } from '../../types/channel'
+import AddMemberModal from '../channels/AddMemberModal'
 import ChannelSidebar from '../channels/ChannelSidebar'
 import CreateChannelModal from '../channels/CreateChannelModal'
 import ConnectionIndicator from '../messages/ConnectionIndicator'
@@ -10,7 +11,7 @@ import MessagePanel from '../messages/MessagePanel'
 import { Brand } from '../ui/Brand'
 import { IconButton } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
-import { IconHash, IconMenu } from '../ui/icons'
+import { IconHash, IconLock, IconMenu, IconUserPlus } from '../ui/icons'
 
 // Where the sidebar stops being a drawer; same breakpoint as index.css.
 const DESKTOP_QUERY = '(min-width: 768px)'
@@ -23,6 +24,7 @@ function MainLayout() {
   const chat = useChatConnection()
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -85,10 +87,17 @@ function MainLayout() {
         <>
           <header className="channel-header">
             <h2 className="channel-title" title={selectedChannel.name}>
-              <span className="channel-hash" aria-hidden="true">
-                #
-              </span>
+              {selectedChannel.isPrivate ? (
+                <IconLock size={15} className="channel-lock" />
+              ) : (
+                <span className="channel-hash" aria-hidden="true">
+                  #
+                </span>
+              )}
               {selectedChannel.name}
+              {selectedChannel.isPrivate && (
+                <span className="visually-hidden"> (canal privado)</span>
+              )}
             </h2>
 
             {/* No placeholder when the channel has no description. */}
@@ -99,6 +108,16 @@ function MainLayout() {
             )}
 
             <ConnectionIndicator status={chat.status} />
+
+            {/* Only private channels have members to manage. Hiding it
+                elsewhere is UX; the backend decides who may add members. */}
+            {selectedChannel.isPrivate && (
+              <IconButton
+                label="Adicionar membro"
+                icon={<IconUserPlus size={18} />}
+                onClick={() => setIsAddMemberOpen(true)}
+              />
+            )}
           </header>
 
           <MessagePanel
@@ -165,6 +184,14 @@ function MainLayout() {
       <main className="channel-area" inert={isDrawerOpen}>
         {renderChannelArea()}
       </main>
+
+      {isAddMemberOpen && selectedChannel?.isPrivate && (
+        <AddMemberModal
+          channelId={selectedChannel.id}
+          channelName={selectedChannel.name}
+          onClose={() => setIsAddMemberOpen(false)}
+        />
+      )}
 
       {isCreateOpen && (
         <CreateChannelModal

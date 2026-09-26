@@ -1,4 +1,5 @@
 import type { ChannelResponse } from '../../types/channel'
+import { IconLock } from '../ui/icons'
 
 interface ChannelListProps {
   channels: ChannelResponse[]
@@ -19,10 +20,16 @@ function ChannelList({ channels, selectedChannelId, onSelect }: ChannelListProps
               title={channel.name}
               onClick={() => onSelect(channel.id)}
             >
-              <span className="channel-hash" aria-hidden="true">
-                #
-              </span>
+              {/* Private channels swap the # for a lock. */}
+              {channel.isPrivate ? (
+                <IconLock size={14} className="channel-lock" />
+              ) : (
+                <span className="channel-hash" aria-hidden="true">
+                  #
+                </span>
+              )}
               <span className="channel-name">{channel.name}</span>
+              {channel.isPrivate && <span className="visually-hidden"> (privado)</span>}
             </button>
           </li>
         ))}
