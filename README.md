@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/luizsoc/GameHub/actions/workflows/ci.yml/badge.svg)](https://github.com/luizsoc/GameHub/actions/workflows/ci.yml)
 
-**Chat em tempo real para comunidades de jogadores**, com canais, histórico
-persistente e mensagens entregues na hora a todos que estão no canal. Aplicação
+**Chat em tempo real para comunidades de jogadores**, com canais públicos e
+privados, mensagens diretas, histórico persistente e mensagens entregues na
+hora a todos que estão na conversa. Aplicação
 full stack que demonstra comunicação em tempo real autenticada de ponta a
 ponta: ASP.NET Core (.NET 10) com SignalR e PostgreSQL no backend, React +
 TypeScript no frontend.
@@ -20,6 +21,9 @@ PostgreSQL · React 19 · TypeScript · Vite · Docker · GitHub Actions
 - **Tempo real autenticado:** o mesmo JWT protege a API REST e a conexão
   SignalR; as mensagens são transmitidas por grupo de canal, com reconexão
   automática e reentrada no canal.
+- **Canais privados e mensagens diretas:** acesso por membro aplicado no
+  backend, na REST e no SignalR (conhecer o id não basta); mensagens diretas
+  sem duplicidade, mesmo com chamadas simultâneas.
 - **Clean Architecture:** backend em quatro projetos (Domain, Application,
   Infrastructure, Api), com EF Core, PostgreSQL e migrations explícitas.
 - **Testes e CI:** 100 testes automatizados (xUnit) e GitHub Actions a cada
@@ -142,12 +146,13 @@ GameHub.Api  ──►  GameHub.Application  ──►  GameHub.Domain
 | Projeto | Responsabilidade |
 | ------- | ---------------- |
 | `GameHub.Domain` | Entidades: `User`, `Channel`, `Message`, `ChannelMember`. |
-| `GameHub.Application` | Serviços (`AuthService`, `ChannelService`, `MessageService`), DTOs e interfaces (repositórios, JWT, hash de senha, unit of work). |
+| `GameHub.Application` | Serviços (`AuthService`, `ChannelService`, `DirectMessageService`, `MessageService`, `UserService`), DTOs e interfaces (repositórios, JWT, hash de senha, unit of work). |
 | `GameHub.Infrastructure` | `GameHubDbContext` (EF Core + PostgreSQL), repositórios, migrations, `JwtService` e hash de senha. |
 | `GameHub.Api` | Controllers REST, `ChatHub` (SignalR), autenticação e configuração em `Program.cs`. |
 
-O frontend é uma SPA que usa REST para dados (canais, histórico, autenticação)
-e SignalR para as mensagens em tempo real.
+O frontend é uma SPA que usa REST para dados (canais, mensagens diretas,
+busca de usuários, histórico, autenticação) e SignalR para as mensagens em
+tempo real e o aviso de mensagens diretas novas.
 
 ### API REST
 
@@ -324,6 +329,10 @@ tipos do build.
   recomendado é um reverse proxy servindo frontend e API no mesmo domínio;
   origens separadas são suportadas com `VITE_API_URL` e
   `Cors__AllowedOrigins__0`.
+- **Mensagem direta como canal privado:** uma conversa entre duas pessoas é um
+  canal privado com dois membros e uma chave única do par
+  (`DirectMessageKey`). Histórico, envio, SignalR e autorização são os mesmos
+  dos canais, e o índice único no banco impede conversas duplicadas.
 - **Migrations explícitas:** nada é aplicado automaticamente pela aplicação; no
   Docker um serviço dedicado (`migrate`) roda o bundle do EF Core antes da API.
 - **Frontend sem biblioteca de UI:** design system próprio (tokens em
@@ -360,8 +369,9 @@ tipos do build.
   público, ou usuário em `ChannelMembers`) existe em um único lugar, uma
   consulta do `ChannelRepository` traduzida para SQL, e toda leitura de canal
   passa por ela: listagem, detalhe, histórico, envio por REST, `JoinChannel` e
-  `SendMessage` no hub. Quem não é membro recebe a mesma resposta de um canal
-  inexistente (404 ou erro no hub), sem nome, descrição ou mensagens; nada é
+  `SendMessage` no hub. Quem não é membro, mesmo conhecendo o id do canal,
+  recebe a mesma resposta de um canal inexistente (404 ou erro no hub), sem
+  nome, descrição ou mensagens; nada é
   gravado nem transmitido. Esconder o canal na interface é só conveniência.
 - **Mensagens diretas:** são canais privados com exatamente dois membros, então
   a mesma regra as protege. Não é possível adicionar uma terceira pessoa, e o
@@ -425,7 +435,12 @@ Hub: `/hubs/chat` (`ChatHub`, exige autenticação).
   `IUserIdProvider` próprio, com `MapInboundClaims = false`).
 - O frontend mantém uma única conexão por sessão, com reconexão automática
   (`withAutomaticReconnect`). Ao trocar de canal, sai do grupo anterior e entra
-  no novo; depois de uma reconexão, entra de novo no canal atual.
+  no novo; depois de uma reconexão, entra de novo no canal atual e busca de
+  novo a lista de mensagens diretas (um `DirectMessageCreated` enviado com a
+  conexão caída não se perde).
+- `JoinChannel` e `SendMessage` aplicam a mesma regra de acesso da REST: quem
+  não é membro de um canal privado ou de uma mensagem direta não entra no
+  grupo nem grava mensagens, mesmo chamando o hub diretamente.
 - O histórico chega por REST e as mensagens novas por SignalR. As duas fontes
   são combinadas por `id`, sem duplicatas. Não há mensagem otimista: a sua
   própria mensagem aparece quando o `ReceiveMessage` chega.
